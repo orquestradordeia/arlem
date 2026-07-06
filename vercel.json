@@ -4,9 +4,7 @@
   "alias": ["ael-store.vercel.app"],
   "buildCommand": null,
   "outputDirectory": ".",
-  "routes": [
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
+  "overwrite": true,
   "headers": [
     {
       "source": "/images/(.*)",
