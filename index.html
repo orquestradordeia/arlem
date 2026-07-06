@@ -32,8 +32,6 @@
       min-height: 100vh;
       overflow-x: hidden;
       line-height: 1.5;
-      display: flex;
-      flex-direction: column;
     }
 
     body::before {
@@ -45,7 +43,7 @@
         radial-gradient(ellipse at 80% 80%, rgba(255, 0, 170, 0.04) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.02) 0%, transparent 50%);
       pointer-events: none;
-      z-index: 0;
+      z-index: -1;
     }
 
     ::-webkit-scrollbar { width: 6px; }
@@ -230,13 +228,12 @@
     /* === BRAND HERO === */
     .brand-hero {
       position: relative;
-      min-height: 85vh;
+      min-height: 70vh;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       padding: 60px 20px;
-      order: 3;
     }
     .brand-hero::before {
       content: '';
@@ -771,8 +768,7 @@
       .header-nav { display: none; }
       .header-logo img { height: 40px; }
       .header-logo span { font-size: 18px; }
-      .header { order: 3; }
-      .brand-hero { order: 2; min-height: 70vh; padding: 40px 16px; }
+      .brand-hero { min-height: 50vh; padding: 40px 16px; }
       .brand-hero-content h1 { font-size: 32px; letter-spacing: 4px; }
       .brand-hero-content .logo-hero img { height: 130px; }
       .brand-hero-content p { font-size: 15px; }
