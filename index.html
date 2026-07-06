@@ -228,12 +228,12 @@
     /* === BRAND HERO === */
     .brand-hero {
       position: relative;
-      min-height: 70vh;
+      min-height: 40vh;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 60px 20px;
+      padding: 30px 20px;
     }
     .brand-hero::before {
       content: '';
@@ -263,12 +263,12 @@
       max-width: 700px;
     }
     .brand-hero-content .logo-hero {
-      margin-bottom: 30px;
+      margin-bottom: 16px;
       display: inline-block;
       position: relative;
     }
     .brand-hero-content .logo-hero img {
-      height: 200px;
+      height: 110px;
       filter: drop-shadow(0 0 40px rgba(0,240,255,0.15)) drop-shadow(0 0 80px rgba(255,0,170,0.1));
       transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
@@ -301,30 +301,13 @@
     }
     .brand-hero-content .tagline {
       font-family: var(--font-display);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
-      letter-spacing: 6px;
+      letter-spacing: 4px;
       color: var(--neon-cyan);
       text-transform: uppercase;
       margin-bottom: 12px;
       text-shadow: 0 0 20px rgba(0,240,255,0.3);
-    }
-    .brand-hero-content h1 {
-      font-family: var(--font-display);
-      font-size: 52px;
-      font-weight: 900;
-      letter-spacing: 8px;
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 16px;
-    }
-    .brand-hero-content p {
-      font-size: 18px;
-      color: var(--text-secondary);
-      max-width: 500px;
-      margin: 0 auto 30px;
-      line-height: 1.6;
     }
     .brand-hero-content .btn-group {
       display: flex;
@@ -768,10 +751,8 @@
       .header-nav { display: none; }
       .header-logo img { height: 40px; }
       .header-logo span { font-size: 18px; }
-      .brand-hero { min-height: 50vh; padding: 40px 16px; }
-      .brand-hero-content h1 { font-size: 32px; letter-spacing: 4px; }
-      .brand-hero-content .logo-hero img { height: 130px; }
-      .brand-hero-content p { font-size: 15px; }
+      .brand-hero { min-height: 30vh; padding: 24px 16px; }
+      .brand-hero-content .logo-hero img { height: 80px; }
       .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
       .features .container { grid-template-columns: repeat(2, 1fr); }
       .footer .container { grid-template-columns: 1fr; }
@@ -864,8 +845,6 @@
         <div class="ring"></div>
         <img src="images/AEL.png" alt="A&amp;L Store">
       </div>
-      <h1>A&amp;L STORE</h1>
-      <p>Sua fonte definitiva de sneakers premium. Estilo, qualidade e atitude em cada detalhe.</p>
       <div class="btn-group">
         <a href="#" class="btn-primary">VER COLEÇÃO</a>
         <a href="#" class="btn-outline">SAIBA MAIS</a>
@@ -901,7 +880,7 @@
   </section>
 
   <!-- PRODUCTS -->
-  <div class="section-title">
+  <div class="section-title" id="produtos">
     <span class="sub">Best Sellers</span>
     <h2>LANÇAMENTOS EXCLUSIVOS</h2>
   </div>
@@ -999,12 +978,15 @@
       { id: 6, name: 'Slide Nike Mind 001 Solar Red', price: 949, oldPrice: 1199, img: 'images/products/product_6.webp', badge: '-20%' },
       { id: 7, name: 'Slide Nike Mind 001 Light Bone', price: 949, oldPrice: 1199, img: 'images/products/product_7.webp', badge: '-20%' },
       { id: 8, name: 'Nike Vomero Premium Black Volt', price: 1199, oldPrice: 1399, img: 'images/products/product_8.webp', badge: '-14%' },
+      { id: 9, name: 'Nike Air Max 97 Triple White', price: 1099, oldPrice: 1399, img: 'images/products/product_9.png', badge: '-21%' },
+      { id: 10, name: 'Nike Air Max 95 Essential Triple Black', price: 899, oldPrice: 1199, img: 'images/products/product_10.png', badge: '-25%' },
     ];
 
     // === RENDER PRODUCTS ===
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       grid.innerHTML = products.map(p => `
+        <a href="product.html?id=${p.id}" style="text-decoration:none;color:inherit">
         <div class="product-card">
           <div class="badge">${p.badge}</div>
           <div class="image-wrap">
@@ -1018,14 +1000,20 @@
               <span class="price-current">R$ ${p.price.toFixed(2).replace('.', ',')}</span>
             </div>
             <div class="installment">ou 4x de R$ ${(p.price / 4).toFixed(2).replace('.', ',')} sem juros</div>
-            <button class="btn-add" onclick="addToCart(${p.id})">ADICIONAR AO CARRINHO</button>
+            <button class="btn-add" onclick="event.preventDefault();addToCart(${p.id})">ADICIONAR AO CARRINHO</button>
           </div>
         </div>
+        </a>
       `).join('');
     }
 
     // === CART ===
-    let cart = [];
+    let cart = JSON.parse(localStorage.getItem('alCart') || '[]');
+
+    function saveCart() {
+      localStorage.setItem('alCart', JSON.stringify(cart));
+      updateCartUI();
+    }
 
     function addToCart(id) {
       const product = products.find(p => p.id === id);
@@ -1035,13 +1023,13 @@
       } else {
         cart.push({ ...product, qty: 1 });
       }
-      updateCartUI();
+      saveCart();
       toggleCart(true);
     }
 
     function removeFromCart(id) {
       cart = cart.filter(item => item.id !== id);
-      updateCartUI();
+      saveCart();
     }
 
     function updateCartUI() {
@@ -1062,7 +1050,7 @@
         <div class="cart-item">
           <img src="${item.img}" alt="${item.name}">
           <div class="item-info">
-            <h4>${item.name}</h4>
+            <h4>${item.name}${item.size ? ` (${item.size})` : ''}</h4>
             <div class="item-price">R$ ${item.price.toFixed(2).replace('.', ',')} x ${item.qty}</div>
           </div>
           <button class="remove-btn" onclick="removeFromCart(${item.id})">&times;</button>
