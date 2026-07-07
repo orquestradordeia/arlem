@@ -3,6 +3,7 @@ import { Orbitron, Rajdhani } from 'next/font/google';
 import '@/styles/global.css';
 import { CartProvider } from '@/context/CartContext';
 import AppShell from '@/components/AppShell';
+import { Analytics } from '@vercel/analytics/next';
 
 const orbitron = Orbitron({
   subsets: ['latin'],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <AppShell>{children}</AppShell>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
