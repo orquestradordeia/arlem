@@ -9,6 +9,22 @@ import { useUserData } from '@/hooks/useUserData';
 
 initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, { locale: 'pt-BR' });
 
+async function getDeviceSessionId(): Promise<string | null> {
+  try {
+    const { MercadoPagoInstance } = await import(
+      '@mercadopago/sdk-react/esm/mercadoPago/initMercadoPago'
+    );
+    const mp = await MercadoPagoInstance.getInstance();
+    const mpAny = mp as any;
+    if (mpAny?.getDeviceId) {
+      return await new Promise((resolve) => {
+        mpAny.getDeviceId((id: string) => resolve(id));
+      });
+    }
+  } catch {}
+  return null;
+}
+
 type Step = 'form' | 'payment' | 'success';
 type PaymentMethod = 'pix' | 'credit';
 
@@ -16,6 +32,7 @@ type FormData = {
   name: string;
   email: string;
   phone: string;
+  cpf: string;
   street: string;
   number: string;
   complement: string;
@@ -39,11 +56,12 @@ export default function CheckoutClient() {
   const [expiresIn, setExpiresIn] = useState(300);
 
   const [form, setForm] = useState<FormData>({
-    name: '', email: '', phone: '',
+    name: '', email: '', phone: '', cpf: '',
     street: '', number: '', complement: '',
     neighborhood: '', city: '', state: '', zip_code: '',
   });
   const [autoFilled, setAutoFilled] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
 
   const { saved, save } = useUserData(form.email);
 
@@ -71,9 +89,62 @@ export default function CheckoutClient() {
     if (e.target.name !== 'email') setAutoFilled(true);
   };
 
+  const handleEmailBlur = async () => {
+    if (!form.email) return;
+    try {
+      const res = await fetch("/api/find-or-create-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setProfileId(data.profile.id);
+
+      if (!data.is_new) {
+        setForm(prev => {
+          const next = { ...prev };
+          let changed = false;
+          const p = data.profile;
+          if (p.name && !prev.name) { next.name = p.name; changed = true; }
+          if (p.phone && !prev.phone) { next.phone = p.phone; changed = true; }
+          const addr = data.addresses?.[0];
+          if (addr) {
+            if (addr.street && !prev.street) { next.street = addr.street; changed = true; }
+            if (addr.number && !prev.number) { next.number = addr.number; changed = true; }
+            if (addr.complement && !prev.complement) { next.complement = addr.complement; changed = true; }
+            if (addr.neighborhood && !prev.neighborhood) { next.neighborhood = addr.neighborhood; changed = true; }
+            if (addr.city && !prev.city) { next.city = addr.city; changed = true; }
+            if (addr.state && !prev.state) { next.state = addr.state; changed = true; }
+            if (addr.zip_code && !prev.zip_code) { next.zip_code = addr.zip_code; changed = true; }
+          }
+          if (changed) setAutoFilled(true);
+          return next;
+        });
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const handlePixSubmit = async () => {
     setLoading(true);
     setError('');
+
+    const device_id = await getDeviceSessionId();
+
+    let pid = profileId;
+    if (!pid) {
+      try {
+        const r = await fetch("/api/find-or-create-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, name: form.name, phone: form.phone }),
+        });
+        const d = await r.json();
+        if (r.ok) { pid = d.profile.id; }
+      } catch {}
+    }
 
     try {
       const res = await fetch('/api/create-order', {
@@ -102,6 +173,11 @@ export default function CheckoutClient() {
             zip_code: form.zip_code,
           },
           payment_method: 'pix',
+          device_id,
+          profile_id: pid,
+          identification: form.cpf
+            ? { type: "CPF", number: form.cpf.replace(/\D/g, "") }
+            : null,
         }),
       });
 
@@ -132,6 +208,21 @@ export default function CheckoutClient() {
   const handleCardPayment = async (cardData: { token: string; payment_method_id: string; installments: number }) => {
     setLoading(true);
     setError('');
+
+    const device_id = await getDeviceSessionId();
+
+    let pid = profileId;
+    if (!pid) {
+      try {
+        const r = await fetch("/api/find-or-create-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, name: form.name, phone: form.phone }),
+        });
+        const d = await r.json();
+        if (r.ok) { pid = d.profile.id; }
+      } catch {}
+    }
 
     try {
       const res = await fetch('/api/create-order', {
@@ -165,6 +256,11 @@ export default function CheckoutClient() {
             payment_method_id: cardData.payment_method_id,
             installments: cardData.installments,
           },
+          device_id,
+          profile_id: pid,
+          identification: form.cpf
+            ? { type: "CPF", number: form.cpf.replace(/\D/g, "") }
+            : null,
         }),
       });
 
@@ -292,11 +388,16 @@ export default function CheckoutClient() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <input name="name" placeholder="Nome completo" value={form.name} onChange={handleChange}
                   style={inputStyle} required />
-                <input name="email" placeholder="E-mail" type="email" value={form.email} onChange={handleChange}
+                <input name="email" placeholder="E-mail" type="email" value={form.email}
+                  onChange={handleChange} onBlur={handleEmailBlur}
                   style={inputStyle} required />
               </div>
-              <input name="phone" placeholder="Telefone (WhatsApp)" value={form.phone} onChange={handleChange}
-                style={inputStyle} required />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <input name="phone" placeholder="Telefone (WhatsApp)" value={form.phone} onChange={handleChange}
+                  style={inputStyle} required />
+                <input name="cpf" placeholder="CPF" value={form.cpf} onChange={handleChange}
+                  style={inputStyle} />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16 }}>
                 <input name="street" placeholder="Logradouro" value={form.street} onChange={handleChange}
                   style={inputStyle} required />

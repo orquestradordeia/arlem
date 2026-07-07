@@ -6,23 +6,18 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 });
 
-function makePayerEmail(email: string): string {
-  if (!email.endsWith("@testuser.com")) {
-    const [local] = email.split("@");
-    return `${local}@testuser.com`;
-  }
-  return email;
-}
-
-async function createMpOrder(orderApi: Order, body: Record<string, unknown>) {
-  const result = await orderApi.create({ body });
-  return result;
+function splitName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  return {
+    first_name: parts[0] ?? fullName,
+    last_name: parts.slice(1).join(" ") || undefined,
+  };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { items, customer, address, payment_method, card } = body;
+    const { items, customer, address, payment_method, card, device_id, profile_id, identification } = body;
 
     const total = items.reduce(
       (sum: number, i: { unit_price: number; quantity: number }) =>
@@ -43,43 +38,92 @@ export async function POST(req: NextRequest) {
             type: "credit_card" as const,
             token: card.token,
             installments: card.installments,
+            statement_descriptor: "A E L SHOP",
           }
         : { id: "pix", type: "bank_transfer" as const };
 
-    const orderApi = new Order(client);
-    const payerEmail = makePayerEmail(customer.email);
+    const { first_name, last_name } = splitName(customer.name);
 
-    const mpOrder = await orderApi.create({
-      body: {
-        type: "online",
-        total_amount: total.toFixed(2).toString(),
-        external_reference: externalRef,
-        transactions: {
-          payments: [
-            {
-              amount: total.toFixed(2),
-              payment_method: paymentMethod,
-            },
-          ],
-        },
-        items: items.map(
-          (i: { title: string; quantity: number; unit_price: number }) => ({
-            title: i.title,
-            quantity: Number(i.quantity),
-            unit_price: i.unit_price.toFixed(2),
-          }),
-        ),
-        payer: {
-          email: payerEmail,
-          phone: { area_code: areaCode, number: phoneNumber },
+    const orderApi = new Order(client);
+    const payerEmail = customer.email;
+
+    const productIds = items.map((i: { product_id: number }) => i.product_id).filter((id: unknown): id is number => typeof id === "number");
+    const { data: products } = await supabaseServer
+      .from("products")
+      .select("id, category_id")
+      .in("id", productIds);
+
+    const productCatMap = new Map(
+      (products ?? []).map((p: { id: number; category_id: number | null }) => [p.id, p.category_id]),
+    );
+
+    const orderBody: Record<string, unknown> = {
+      type: "online",
+      total_amount: total.toFixed(2).toString(),
+      external_reference: externalRef,
+      config: {
+        statement_descriptor: "A E L SHOP",
+      },
+      transactions: {
+        payments: [
+          {
+            amount: total.toFixed(2),
+            payment_method: paymentMethod,
+          },
+        ],
+      },
+      items: items.map(
+        (i: { title: string; quantity: number; unit_price: number; product_id: number }) => ({
+          title: i.title,
+          quantity: Number(i.quantity),
+          unit_price: i.unit_price.toFixed(2),
+          category_id: productCatMap.get(i.product_id)?.toString(),
+        }),
+      ),
+      payer: {
+        email: payerEmail,
+        entity_type: "individual",
+        first_name,
+        last_name,
+        phone: { area_code: areaCode, number: phoneNumber },
+        ...(identification?.type && identification?.number
+          ? { identification: { type: identification.type, number: identification.number } }
+          : {}),
+        address: {
+          zip_code: address.zip_code,
+          street_name: address.street,
+          street_number: address.number,
+          neighborhood: address.neighborhood,
+          state: address.state,
+          city: address.city,
+          complement: address.complement || "SEM COMPLEMENTO",
         },
       },
-    });
+      shipment: {
+        mode: "custom",
+        address: {
+          street_name: address.street,
+          street_number: address.number,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          state: address.state,
+          zip_code: address.zip_code,
+          complement: address.complement || "SEM COMPLEMENTO",
+        },
+      },
+
+    };
+
+    if (device_id) {
+      orderBody.device_id = device_id;
+    }
+
+    const mpOrder = await orderApi.create({ body: orderBody });
 
     const { data: dbAddress, error: addrError } = await supabaseServer
       .from("addresses")
       .insert({
-        profile_id: null,
+        profile_id: profile_id ?? null,
         street: address.street,
         number: address.number,
         complement: address.complement || null,
@@ -97,7 +141,7 @@ export async function POST(req: NextRequest) {
     const { data: dbOrder, error: orderError } = await supabaseServer
       .from("orders")
       .insert({
-        profile_id: null,
+        profile_id: profile_id ?? null,
         total,
         shipping_address_id: dbAddress.id,
         mp_payment_id: mpOrder.id?.toString() ?? null,

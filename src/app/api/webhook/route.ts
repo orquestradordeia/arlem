@@ -9,29 +9,17 @@ const client = new MercadoPagoConfig({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const dataId = body.data?.id;
 
-    if (body.type === "payment") {
-      const payment = new Payment(client);
-      const mpPayment = await payment.get({ id: body.data.id });
-
-      const orderId = mpPayment.order?.id
-        ? Number(mpPayment.order.id)
-        : null;
-
-      if (orderId && mpPayment.id) {
-        await supabase.from("payments").insert({
-          order_id: orderId,
-          mp_payment_id: mpPayment.id.toString(),
-          mp_status: mpPayment.status,
-          amount: Number(mpPayment.transaction_amount),
-          payment_method: mpPayment.payment_method_id,
-        });
-      }
+    if (!dataId) {
+      return NextResponse.json({ received: true });
     }
 
-    if (body.type === "order" && body.data.id) {
+    const isOrderId = String(dataId).startsWith("ORD");
+
+    if (body.type === "order" || isOrderId) {
       const orderApi = new Order(client);
-      const mpOrder = await orderApi.get({ id: body.data.id });
+      const mpOrder = await orderApi.get({ id: dataId });
 
       const mpStatus = mpOrder.status;
 
@@ -51,11 +39,28 @@ export async function POST(req: NextRequest) {
           .update({ status: dbStatus, mp_payment_id: mpOrderId })
           .eq("mp_payment_id", mpOrderId);
       }
+    } else if (body.type === "payment") {
+      const payment = new Payment(client);
+      const mpPayment = await payment.get({ id: dataId });
+
+      const orderId = mpPayment.order?.id
+        ? Number(mpPayment.order.id)
+        : null;
+
+      if (orderId && mpPayment.id) {
+        await supabase.from("payments").insert({
+          order_id: orderId,
+          mp_payment_id: mpPayment.id.toString(),
+          mp_status: mpPayment.status,
+          amount: Number(mpPayment.transaction_amount),
+          payment_method: mpPayment.payment_method_id,
+        });
+      }
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Webhook error:", error);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    return NextResponse.json({ received: true });
   }
 }
