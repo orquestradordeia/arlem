@@ -6,6 +6,7 @@ import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
 import { useUserData } from '@/hooks/useUserData';
+import AddressModal from '@/components/AddressModal';
 
 initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, { locale: 'pt-BR' });
 
@@ -123,6 +124,7 @@ export default function CheckoutClient() {
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [autoFilled, setAutoFilled] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(true);
 
   const { saved, save } = useUserData(form.email);
 
@@ -472,6 +474,25 @@ export default function CheckoutClient() {
             </div>
           </div>
         </div>
+      )}
+
+      {step === 'form' && showAddressModal && (
+        <AddressModal
+          onUse={(addr) => {
+            setForm(prev => ({
+              ...prev,
+              street: addr.street,
+              number: addr.number,
+              complement: addr.complement,
+              neighborhood: addr.neighborhood,
+              city: addr.city,
+              state: addr.state,
+              zip_code: addr.zip_code,
+            }));
+            setShowAddressModal(false);
+          }}
+          onClose={() => setShowAddressModal(false)}
+        />
       )}
 
       {step === 'form' && (

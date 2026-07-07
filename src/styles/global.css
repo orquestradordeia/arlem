@@ -1422,3 +1422,110 @@ body::before {
 .admin-input:focus { border-color: var(--neon-cyan); }
 .admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 720px; }
 .admin-full { grid-column: 1 / -1; }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ADDRESS MODAL */
+.address-modal {
+  background: #1a1a2e;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  width: 96%;
+  max-width: 480px;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,0,0,0.5);
+}
+.address-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.address-modal-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--neon-cyan);
+}
+.address-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.address-modal-close:hover {
+  color: var(--text-primary);
+}
+.address-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.address-modal-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+}
+.address-modal-input:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0,240,255,0.15);
+}
+.address-modal-row {
+  display: flex;
+  gap: 10px;
+}
+.address-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.address-modal-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+.address-modal-btn-primary {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  color: #000;
+}
+.address-modal-btn-primary:hover {
+  box-shadow: 0 0 30px rgba(0,240,255,0.3);
+}
+.address-modal-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+.address-modal-btn-secondary:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+.address-modal-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--neon-cyan);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
