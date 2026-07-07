@@ -6,10 +6,12 @@ import { useCart } from '@/context/CartContext';
 import TopBar from './TopBar';
 import Header from './Header';
 import CartDrawer from './CartDrawer';
+import SearchOverlay from './SearchOverlay';
 import Footer from './Footer';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
   const isCheckout = pathname.startsWith('/checkout');
@@ -21,8 +23,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <TopBar />
       <Header
         onCartToggle={() => setCartOpen(o => !o)}
-        onSearchToggle={() => alert('Função de busca')}
+        onSearchToggle={() => setSearchOpen(o => !o)}
       />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       {children}
       {!isCheckout && <MobileCartButton onClick={() => setCartOpen(true)} />}

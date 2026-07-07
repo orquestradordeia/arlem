@@ -1529,3 +1529,294 @@ body::before {
   animation: spin 1s linear infinite;
   margin: 0 auto;
 }
+
+/* =====================================================
+   SEARCH OVERLAY
+   ===================================================== */
+.search-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 101;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.search-overlay-backdrop.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 102;
+  background: rgba(10, 10, 15, 0.96);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  box-shadow: 0 8px 40px rgba(0, 240, 255, 0.08);
+  padding: 20px 0;
+  transform: translateY(-110%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.search-overlay.visible {
+  transform: translateY(0);
+}
+
+.search-overlay-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass-bg);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 16px;
+  transition: border-color 0.3s;
+}
+.search-overlay-form:focus-within {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.12);
+}
+
+.search-overlay-icon {
+  width: 20px;
+  height: 20px;
+  fill: var(--neon-cyan);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.search-overlay-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+.search-overlay-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-overlay-btn {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  border: none;
+  border-radius: 8px;
+  color: #0a0a0f;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+}
+.search-overlay-btn:hover {
+  opacity: 0.85;
+  transform: scale(1.03);
+}
+
+.search-overlay-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+.search-overlay-close svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+.search-overlay-close:hover {
+  color: var(--neon-magenta);
+  transform: rotate(90deg);
+}
+
+/* =====================================================
+   BUSCA PAGE — Hero / Search Bar
+   ===================================================== */
+.busca-hero {
+  padding: 48px 0 36px;
+  position: relative;
+}
+.busca-hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-purple));
+}
+
+.busca-title {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 4vw, 36px);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+}
+.busca-query {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.busca-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass-bg);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 14px;
+  padding: 12px 20px;
+  max-width: 680px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.busca-form:focus-within {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.14);
+}
+
+.busca-form-icon {
+  width: 20px;
+  height: 20px;
+  fill: var(--neon-cyan);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.busca-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 500;
+}
+.busca-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.busca-submit {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  border: none;
+  border-radius: 8px;
+  color: #0a0a0f;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+}
+.busca-submit:hover {
+  opacity: 0.85;
+  transform: scale(1.03);
+}
+
+.busca-count {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+/* =====================================================
+   BUSCA PAGE — Results Grid
+   ===================================================== */
+.busca-grid-section {
+  padding-top: 8px;
+  padding-bottom: 60px;
+}
+
+.busca-card-brand {
+  font-size: 12px;
+  color: var(--neon-cyan);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+/* =====================================================
+   BUSCA PAGE — Empty State
+   ===================================================== */
+.busca-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 20px;
+  gap: 16px;
+}
+
+.busca-empty-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  margin-bottom: 8px;
+}
+.busca-empty-icon svg {
+  width: 36px;
+  height: 36px;
+  fill: var(--neon-cyan);
+  opacity: 0.5;
+}
+
+.busca-empty h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.busca-empty p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  max-width: 380px;
+}
+
+.busca-empty-cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  color: #0a0a0f;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.busca-empty-cta:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
