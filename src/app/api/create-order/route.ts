@@ -6,6 +6,19 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 });
 
+function makePayerEmail(email: string): string {
+  if (!email.endsWith("@testuser.com")) {
+    const [local] = email.split("@");
+    return `${local}@testuser.com`;
+  }
+  return email;
+}
+
+async function createMpOrder(orderApi: Order, body: Record<string, unknown>) {
+  const result = await orderApi.create({ body });
+  return result;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -34,6 +47,8 @@ export async function POST(req: NextRequest) {
         : { id: "pix", type: "bank_transfer" as const };
 
     const orderApi = new Order(client);
+    const payerEmail = makePayerEmail(customer.email);
+
     const mpOrder = await orderApi.create({
       body: {
         type: "online",
@@ -55,7 +70,7 @@ export async function POST(req: NextRequest) {
           }),
         ),
         payer: {
-          email: customer.email,
+          email: payerEmail,
           phone: { area_code: areaCode, number: phoneNumber },
         },
       },
@@ -111,7 +126,7 @@ export async function POST(req: NextRequest) {
     await supabaseServer.from("order_items").insert(orderItems);
 
     const payment = mpOrder.transactions?.payments?.[0];
-    const pmData = (payment?.payment_method as Record<string, unknown>)?.data as
+    const pm = payment?.payment_method as
       | { qr_code?: string; qr_code_base64?: string }
       | undefined;
 
@@ -127,8 +142,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       order: { id: dbOrder.id, status: mpPaymentStatus === "approved" ? "paid" : "pending" },
       mpOrder: { id: mpOrder.id },
-      qrCode: pmData?.qr_code_base64 ?? null,
-      qrCodeText: pmData?.qr_code ?? null,
+      qrCode: pm?.qr_code_base64 ?? null,
+      qrCodeText: pm?.qr_code ?? null,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : JSON.stringify(error);
