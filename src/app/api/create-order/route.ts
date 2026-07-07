@@ -190,7 +190,23 @@ export async function POST(req: NextRequest) {
       qrCodeText: pm?.qr_code ?? null,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : JSON.stringify(error);
+    let message = "Erro interno ao processar pagamento. Tente novamente.";
+
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === "object" && error !== null) {
+      const obj = error as Record<string, unknown>;
+      const causes = obj.cause;
+      if (Array.isArray(causes) && causes.length > 0) {
+        const parts = causes.map((c: Record<string, unknown>) =>
+          [c.description, c.error_description].filter(Boolean).join(". ")
+        ).filter(Boolean);
+        if (parts.length > 0) message = parts.join(". ");
+      } else if (typeof obj.message === "string") {
+        message = obj.message;
+      }
+    }
+
     console.error("Error creating order:", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }

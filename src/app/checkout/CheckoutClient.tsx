@@ -42,8 +42,67 @@ type FormData = {
   zip_code: string;
 };
 
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+const FIELD_LABELS: Record<keyof FormData, string> = {
+  name: 'Nome completo',
+  email: 'E-mail',
+  phone: 'Telefone',
+  cpf: 'CPF',
+  street: 'Logradouro',
+  number: 'Número',
+  complement: 'Complemento',
+  neighborhood: 'Bairro',
+  city: 'Cidade',
+  state: 'UF',
+  zip_code: 'CEP',
+};
+
+function validateForm(data: FormData): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!data.name.trim() || data.name.trim().length < 3) {
+    errors.name = 'Nome completo é obrigatório (mínimo 3 caracteres)';
+  }
+
+  if (!data.email.trim()) {
+    errors.email = 'E-mail é obrigatório';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    errors.email = 'Informe um e-mail válido';
+  }
+
+  const digits = data.phone.replace(/\D/g, '');
+  if (!digits || digits.length < 10) {
+    errors.phone = 'Telefone é obrigatório (mínimo 10 dígitos)';
+  }
+
+  if (data.cpf) {
+    const cpfDigits = data.cpf.replace(/\D/g, '');
+    if (cpfDigits.length !== 11) {
+      errors.cpf = 'CPF deve ter 11 dígitos';
+    }
+  }
+
+  if (!data.street.trim()) errors.street = 'Logradouro é obrigatório';
+  if (!data.number.trim()) errors.number = 'Número é obrigatório';
+  if (!data.neighborhood.trim()) errors.neighborhood = 'Bairro é obrigatório';
+  if (!data.city.trim()) errors.city = 'Cidade é obrigatório';
+
+  const uf = data.state.trim().toUpperCase();
+  if (!uf || !/^[A-Z]{2}$/.test(uf)) {
+    errors.state = 'UF deve ter exatamente 2 letras';
+  }
+
+  const cepDigits = data.zip_code.replace(/\D/g, '');
+  if (!cepDigits || cepDigits.length < 8) {
+    errors.zip_code = 'CEP é obrigatório (mínimo 8 dígitos)';
+  }
+
+  return errors;
+}
+
 export default function CheckoutClient() {
-  const { cart, cartTotal, cartCount } = useCart();
+  const { cart, cartTotal, cartCount, clearCart } = useCart();
   const [step, setStep] = useState<Step>('form');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [loading, setLoading] = useState(false);
@@ -60,6 +119,8 @@ export default function CheckoutClient() {
     street: '', number: '', complement: '',
     neighborhood: '', city: '', state: '', zip_code: '',
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [autoFilled, setAutoFilled] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
 
@@ -85,11 +146,35 @@ export default function CheckoutClient() {
   }, [saved, autoFilled]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    if (e.target.name !== 'email') setAutoFilled(true);
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    if (name !== 'email') setAutoFilled(true);
+    if (touched[name as keyof FormData]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[name as keyof FormData];
+        return next;
+      });
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const field = e.target.name as keyof FormData;
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const fieldErrors = validateForm(form);
+    if (fieldErrors[field]) {
+      setErrors(prev => ({ ...prev, [field]: fieldErrors[field] }));
+    }
   };
 
   const handleEmailBlur = async () => {
+    setTouched(prev => ({ ...prev, email: true }));
+    const fieldErrors = validateForm(form);
+    if (fieldErrors.email) {
+      setErrors(prev => ({ ...prev, email: fieldErrors.email }));
+      return;
+    }
+
     if (!form.email) return;
     try {
       const res = await fetch("/api/find-or-create-profile", {
@@ -127,7 +212,22 @@ export default function CheckoutClient() {
     }
   };
 
+  const getAddressPayload = () => ({
+    street: form.street,
+    number: form.number,
+    complement: form.complement || "SEM COMPLEMENTO",
+    neighborhood: form.neighborhood,
+    city: form.city,
+    state: form.state,
+    zip_code: form.zip_code,
+  });
+
   const handlePixSubmit = async () => {
+    const validation = validateForm(form);
+    setTouched({ name: true, email: true, phone: true, street: true, number: true, neighborhood: true, city: true, state: true, zip_code: true });
+    setErrors(validation);
+    if (Object.keys(validation).length > 0) return;
+
     setLoading(true);
     setError('');
 
@@ -163,15 +263,7 @@ export default function CheckoutClient() {
             email: form.email,
             phone: form.phone,
           },
-          address: {
-            street: form.street,
-            number: form.number,
-            complement: form.complement,
-            neighborhood: form.neighborhood,
-            city: form.city,
-            state: form.state,
-            zip_code: form.zip_code,
-          },
+          address: getAddressPayload(),
           payment_method: 'pix',
           device_id,
           profile_id: pid,
@@ -206,6 +298,14 @@ export default function CheckoutClient() {
   };
 
   const handleCardPayment = async (cardData: { token: string; payment_method_id: string; installments: number }) => {
+    const validation = validateForm(form);
+    setTouched({ name: true, email: true, phone: true, street: true, number: true, neighborhood: true, city: true, state: true, zip_code: true });
+    setErrors(validation);
+    if (Object.keys(validation).length > 0) {
+      setError('Corrija os campos destacados antes de prosseguir');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -241,15 +341,7 @@ export default function CheckoutClient() {
             email: form.email,
             phone: form.phone,
           },
-          address: {
-            street: form.street,
-            number: form.number,
-            complement: form.complement,
-            neighborhood: form.neighborhood,
-            city: form.city,
-            state: form.state,
-            zip_code: form.zip_code,
-          },
+          address: getAddressPayload(),
           payment_method: 'credit',
           card: {
             token: cardData.token,
@@ -276,6 +368,7 @@ export default function CheckoutClient() {
         },
       });
       setOrderId(data.order.id);
+      clearCart();
       setStep('success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar');
@@ -293,6 +386,7 @@ export default function CheckoutClient() {
         const data = await res.json();
         if (data.status === 'paid') {
           setPaid(true);
+          clearCart();
           setStep('success');
           clearInterval(interval);
         }
@@ -386,35 +480,23 @@ export default function CheckoutClient() {
             <h2 style={{ marginBottom: 24 }}>Informações de entrega</h2>
             <div style={{ display: 'grid', gap: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <input name="name" placeholder="Nome completo" value={form.name} onChange={handleChange}
-                  style={inputStyle} required />
-                <input name="email" placeholder="E-mail" type="email" value={form.email}
-                  onChange={handleChange} onBlur={handleEmailBlur}
-                  style={inputStyle} required />
+                <InputField name="name" placeholder="Nome completo" value={form.name} onChange={handleChange} onBlur={handleBlur} error={errors.name} touched={touched.name} />
+                <InputField name="email" placeholder="E-mail" type="email" value={form.email} onChange={handleChange} onBlur={(e) => { handleBlur(e); handleEmailBlur(); }} error={errors.email} touched={touched.email} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <input name="phone" placeholder="Telefone (WhatsApp)" value={form.phone} onChange={handleChange}
-                  style={inputStyle} required />
-                <input name="cpf" placeholder="CPF" value={form.cpf} onChange={handleChange}
-                  style={inputStyle} />
+                <InputField name="phone" placeholder="Telefone (WhatsApp)" value={form.phone} onChange={handleChange} onBlur={handleBlur} error={errors.phone} touched={touched.phone} inputMode="numeric" />
+                <InputField name="cpf" placeholder="CPF" value={form.cpf} onChange={handleChange} onBlur={handleBlur} error={errors.cpf} touched={touched.cpf} inputMode="numeric" optional />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16 }}>
-                <input name="street" placeholder="Logradouro" value={form.street} onChange={handleChange}
-                  style={inputStyle} required />
-                <input name="number" placeholder="Número" value={form.number} onChange={handleChange}
-                  style={inputStyle} required />
+                <InputField name="street" placeholder="Logradouro" value={form.street} onChange={handleChange} onBlur={handleBlur} error={errors.street} touched={touched.street} />
+                <InputField name="number" placeholder="Número" value={form.number} onChange={handleChange} onBlur={handleBlur} error={errors.number} touched={touched.number} inputMode="numeric" />
               </div>
-              <input name="complement" placeholder="Complemento (opcional)" value={form.complement} onChange={handleChange}
-                style={inputStyle} />
-              <input name="neighborhood" placeholder="Bairro" value={form.neighborhood} onChange={handleChange}
-                style={inputStyle} required />
+              <InputField name="complement" placeholder="Complemento (opcional)" value={form.complement} onChange={handleChange} onBlur={handleBlur} error={errors.complement} touched={touched.complement} optional />
+              <InputField name="neighborhood" placeholder="Bairro" value={form.neighborhood} onChange={handleChange} onBlur={handleBlur} error={errors.neighborhood} touched={touched.neighborhood} />
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
-                <input name="city" placeholder="Cidade" value={form.city} onChange={handleChange}
-                  style={inputStyle} required />
-                <input name="state" placeholder="UF" value={form.state} onChange={handleChange}
-                  style={inputStyle} maxLength={2} required />
-                <input name="zip_code" placeholder="CEP" value={form.zip_code} onChange={handleChange}
-                  style={inputStyle} required />
+                <InputField name="city" placeholder="Cidade" value={form.city} onChange={handleChange} onBlur={handleBlur} error={errors.city} touched={touched.city} />
+                <InputField name="state" placeholder="UF" value={form.state} onChange={handleChange} onBlur={handleBlur} error={errors.state} touched={touched.state} maxLength={2} />
+                <InputField name="zip_code" placeholder="CEP" value={form.zip_code} onChange={handleChange} onBlur={handleBlur} error={errors.zip_code} touched={touched.zip_code} inputMode="numeric" />
               </div>
             </div>
           </div>
@@ -467,7 +549,15 @@ export default function CheckoutClient() {
               </div>
             </div>
 
-            {error && <p style={{ color: '#ff4444', fontSize: 14, marginBottom: 12 }}>{error}</p>}
+            {error && (
+              <div style={{
+                background: 'rgba(255,68,68,0.12)', border: '1px solid #ff4444',
+                borderRadius: 8, padding: '12px 16px', marginBottom: 12,
+                fontSize: 13, color: '#ff6b6b',
+              }}>
+                {error}
+              </div>
+            )}
 
             {paymentMethod === 'pix' && (
               <button className="checkout-btn" onClick={handlePixSubmit} disabled={loading}
@@ -528,6 +618,47 @@ export default function CheckoutClient() {
             )}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function InputField({
+  name, placeholder, value, onChange, onBlur, error, touched,
+  type, inputMode, maxLength, optional,
+}: {
+  name: keyof FormData;
+  placeholder: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  error?: string;
+  touched?: boolean;
+  type?: string;
+  inputMode?: 'numeric' | 'tel';
+  maxLength?: number;
+  optional?: boolean;
+}) {
+  return (
+    <div>
+      <input
+        name={name}
+        placeholder={placeholder}
+        type={type || 'text'}
+        inputMode={inputMode || 'text'}
+        maxLength={maxLength}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        style={{
+          ...inputStyle,
+          borderColor: touched && error ? '#ff4444' : 'var(--glass-border)',
+        }}
+      />
+      {touched && error && (
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#ff6b6b', lineHeight: 1.3 }}>
+          {error}
+        </p>
       )}
     </div>
   );
