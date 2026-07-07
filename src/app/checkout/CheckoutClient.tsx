@@ -239,16 +239,7 @@ export default function CheckoutClient() {
         <span>Checkout</span>
       </div>
 
-      {step === 'success' && (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </div>
-          <h2>Pagamento aprovado!</h2>
-          <p style={{ color: 'var(--text-secondary)', margin: '12px 0 24px' }}>Seu pedido #{orderId} foi confirmado.</p>
-          <Link href="/#produtos" className="checkout-btn" style={{ display: 'inline-block', width: 'auto', padding: '14px 40px', textDecoration: 'none' }}>CONTINUAR COMPRANDO</Link>
-        </div>
-      )}
+      {step === 'success' && <SuccessScreen form={form} orderId={orderId} />}
 
       {step === 'payment' && !paid && (
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -437,6 +428,58 @@ export default function CheckoutClient() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SuccessScreen({ form, orderId }: { form: FormData; orderId: number | null }) {
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 15);
+  const dd = String(deliveryDate.getDate()).padStart(2, '0');
+  const mm = String(deliveryDate.getMonth() + 1).padStart(2, '0');
+  const yyyy = deliveryDate.getFullYear();
+
+  return (
+    <div style={{ textAlign: 'center', padding: '20px 0', maxWidth: 520, margin: '0 auto' }}>
+      <div style={{ fontSize: 64, marginBottom: 16 }}>
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h2 style={{ fontSize: 24, marginBottom: 8 }}>Pagamento aprovado!</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: 15 }}>
+        <strong style={{ color: 'var(--text-primary)' }}>{form.name}</strong>, seu pedido <strong style={{ color: 'var(--neon-cyan)' }}>#{orderId}</strong> foi confirmado com sucesso.
+      </p>
+      <div style={{
+        background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+        borderRadius: 12, padding: 20, marginBottom: 24, textAlign: 'left', fontSize: 14,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--glass-border)' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Pedido</span>
+          <span>#{orderId}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--glass-border)' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Previsão de entrega</span>
+          <span style={{ color: 'var(--neon-cyan)' }}>{dd}/{mm}/{yyyy}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Endereço de entrega</span>
+          <span style={{ textAlign: 'right', maxWidth: '55%' }}>{form.street}, {form.number} - {form.neighborhood}, {form.city}/{form.state}</span>
+        </div>
+      </div>
+      <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
+        Enviamos um e-mail para <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong> confirmando seu pedido.
+        Neste e-mail você tem um link para confirmar o seu endereço e criar uma senha para acessar o sistema futuramente!
+      </p>
+      <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 28 }}>
+        Obrigado por mais esse pedido!
+      </p>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Link href="/#produtos" className="checkout-btn" style={{ display: 'inline-block', width: 'auto', padding: '14px 32px', textDecoration: 'none', fontSize: 13 }}>
+          CONTINUAR COMPRANDO
+        </Link>
+        <Link href="/app/pedidos" style={{ display: 'inline-block', width: 'auto', padding: '14px 32px', textDecoration: 'none', fontSize: 13, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 8, color: 'var(--neon-cyan)', transition: 'var(--transition)', textAlign: 'center' }}>
+          IR PARA ÁREA DE CLIENTES
+        </Link>
+      </div>
     </div>
   );
 }

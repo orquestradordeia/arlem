@@ -110,12 +110,22 @@ export async function POST(req: NextRequest) {
 
     await supabaseServer.from("order_items").insert(orderItems);
 
-    const pm = mpOrder.transactions?.payments?.[0]?.payment_method as
+    const payment = mpOrder.transactions?.payments?.[0];
+    const pm = payment?.payment_method as
       | { qr_code?: string; qr_code_base64?: string }
       | undefined;
 
+    const mpPaymentStatus = payment?.status as string | undefined;
+
+    if (mpPaymentStatus === "approved") {
+      await supabaseServer
+        .from("orders")
+        .update({ status: "paid" })
+        .eq("id", dbOrder.id);
+    }
+
     return NextResponse.json({
-      order: { id: dbOrder.id },
+      order: { id: dbOrder.id, status: mpPaymentStatus === "approved" ? "paid" : "pending" },
       mpOrder: { id: mpOrder.id },
       qrCode: pm?.qr_code_base64 ?? null,
       qrCodeText: pm?.qr_code ?? null,

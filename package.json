@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:admin": "npx tsx scripts/seed-admin.ts",
+    "seed:users": "npx tsx scripts/seed-test-users.ts"
   },
   "bugs": {
     "url": "https://github.com/orquestradordeia/arlem/issues"
@@ -20,7 +22,8 @@
     "next": "^16.2.10",
     "pg": "^8.22.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "recharts": "^3.9.2"
   },
   "devDependencies": {
     "@types/node": "26.1.0",
