@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sobre Nós | AEL Store",
+  title: "Sobre Nós | ALL Shops",
 };
 
 export default function SobrePage() {

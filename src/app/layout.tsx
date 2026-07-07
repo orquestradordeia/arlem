@@ -16,10 +16,10 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  title: 'Store – Cyberpunk Premium',
+  title: 'ALL Shops',
   description: 'Sua fonte definitiva de sneakers premium. Estilo, qualidade e atitude em cada detalhe.',
   openGraph: {
-    title: 'Store – Cyberpunk Premium',
+    title: 'ALL Shops',
     description: 'Sua fonte definitiva de sneakers premium.',
     type: 'website',
   },

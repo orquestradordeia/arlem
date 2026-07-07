@@ -11,13 +11,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const product = await getProduct(Number(id));
 
-  if (!product) return { title: 'Produto não encontrado – Store' };
+  if (!product) return { title: 'Produto não encontrado – ALL Shops' };
 
   return {
-    title: `${product.name} – Store`,
+    title: `${product.name} – ALL Shops`,
     description: product.description.replace(/<[^>]*>/g, '').slice(0, 160),
     openGraph: {
-      title: `${product.name} – Store`,
+      title: `${product.name} – ALL Shops`,
       description: product.description.replace(/<[^>]*>/g, '').slice(0, 160),
       images: [{ url: product.img, width: 800, height: 800 }],
       type: 'website',

@@ -49,7 +49,7 @@ const FIELD_LABELS: Record<keyof FormData, string> = {
   email: 'E-mail',
   phone: 'Telefone',
   cpf: 'CPF',
-  street: 'Logradouro',
+  street: 'Rua',
   number: 'Número',
   complement: 'Complemento',
   neighborhood: 'Bairro',
@@ -83,7 +83,7 @@ function validateForm(data: FormData): FormErrors {
     }
   }
 
-  if (!data.street.trim()) errors.street = 'Logradouro é obrigatório';
+  if (!data.street.trim()) errors.street = 'Rua é obrigatório';
   if (!data.number.trim()) errors.number = 'Número é obrigatório';
   if (!data.neighborhood.trim()) errors.neighborhood = 'Bairro é obrigatório';
   if (!data.city.trim()) errors.city = 'Cidade é obrigatório';
@@ -488,7 +488,7 @@ export default function CheckoutClient() {
                 <InputField name="cpf" placeholder="CPF" value={form.cpf} onChange={handleChange} onBlur={handleBlur} error={errors.cpf} touched={touched.cpf} inputMode="numeric" optional />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16 }}>
-                <InputField name="street" placeholder="Logradouro" value={form.street} onChange={handleChange} onBlur={handleBlur} error={errors.street} touched={touched.street} />
+                <InputField name="street" placeholder="Rua" value={form.street} onChange={handleChange} onBlur={handleBlur} error={errors.street} touched={touched.street} />
                 <InputField name="number" placeholder="Número" value={form.number} onChange={handleChange} onBlur={handleBlur} error={errors.number} touched={touched.number} inputMode="numeric" />
               </div>
               <InputField name="complement" placeholder="Complemento (opcional)" value={form.complement} onChange={handleChange} onBlur={handleBlur} error={errors.complement} touched={touched.complement} optional />

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ContactForm } from "./ContactForm";
 
 export const metadata: Metadata = {
-  title: "Contato | AEL Store",
+  title: "Contato | ALL Shops",
 };
 
 const faq = [
