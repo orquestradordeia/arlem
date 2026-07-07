@@ -16,22 +16,23 @@ export async function GET(req: NextRequest) {
 
     const mpStatus = mpOrder.status;
 
-    let dbStatus = "pending";
-    if (mpStatus === "paid") dbStatus = "paid";
-    else if (mpStatus === "cancelled") dbStatus = "cancelled";
+    const statusMap: Record<string, string> = {
+      processed: "paid",
+      canceled: "cancelled",
+      expired: "cancelled",
+    };
+
+    const dbStatus = statusMap[mpStatus ?? ""] ?? "pending";
 
     if (mpOrder.id) {
       const mpOrderId = mpOrder.id.toString();
-      const validStatus: Record<string, "pending" | "paid" | "cancelled"> = {
-        pending: "pending", paid: "paid", cancelled: "cancelled",
-      };
       await supabaseServer
         .from("orders")
-        .update({ status: validStatus[mpStatus ?? ""] ?? "pending" })
+        .update({ status: dbStatus as "pending" | "paid" | "cancelled" })
         .eq("mp_payment_id", mpOrderId);
     }
 
-    return NextResponse.json({ status: mpStatus });
+    return NextResponse.json({ status: dbStatus });
   } catch {
     return NextResponse.json({ status: "pending" });
   }

@@ -26,17 +26,17 @@ export async function POST(req: NextRequest) {
       if (mpOrder.id) {
         const mpOrderId = mpOrder.id.toString();
 
-        const validStatus: Record<string, "pending" | "paid" | "cancelled"> = {
-          pending: "pending",
-          paid: "paid",
-          cancelled: "cancelled",
+        const statusMap: Record<string, string> = {
+          processed: "paid",
+          canceled: "cancelled",
+          expired: "cancelled",
         };
 
-        const dbStatus = validStatus[mpStatus ?? ""] ?? "pending";
+        const dbStatus = statusMap[mpStatus ?? ""] ?? "pending";
 
         await supabase
           .from("orders")
-          .update({ status: dbStatus, mp_payment_id: mpOrderId })
+          .update({ status: dbStatus as "pending" | "paid" | "cancelled", mp_payment_id: mpOrderId })
           .eq("mp_payment_id", mpOrderId);
       }
     } else if (body.type === "payment") {

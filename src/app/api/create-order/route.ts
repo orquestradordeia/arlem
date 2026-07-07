@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
 
     const mpPaymentStatus = payment?.status as string | undefined;
 
-    if (mpPaymentStatus === "approved") {
+    if (mpPaymentStatus === "processed" || mpPaymentStatus === "approved") {
       await supabaseServer
         .from("orders")
         .update({ status: "paid" })
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      order: { id: dbOrder.id, status: mpPaymentStatus === "approved" ? "paid" : "pending" },
+      order: { id: dbOrder.id, status: mpPaymentStatus === "processed" || mpPaymentStatus === "approved" ? "paid" : "pending" },
       mpOrder: { id: mpOrder.id },
       qrCode: pm?.qr_code_base64 ?? null,
       qrCodeText: pm?.qr_code ?? null,

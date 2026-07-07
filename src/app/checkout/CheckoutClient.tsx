@@ -381,7 +381,7 @@ export default function CheckoutClient() {
       )}
 
       {step === 'form' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 40, alignItems: 'start' }}>
+        <div className="checkout-grid">
           <div>
             <h2 style={{ marginBottom: 24 }}>Informações de entrega</h2>
             <div style={{ display: 'grid', gap: 16 }}>
