@@ -10,7 +10,7 @@ async function getData() {
     supabaseServer.from("orders").select("*", { count: "exact", head: true }),
     supabaseServer.from("orders").select("total").eq("status", "paid"),
     supabaseServer.from("profiles").select("*", { count: "exact", head: true }),
-    supabaseServer.from("order_items").select("quantity, unit_price, products(name)"),
+    supabaseServer.from("order_items").select("quantity, unit_price, products(name, categories(name))"),
   ]);
 
   const totalRevenue = (paidOrders.data ?? []).reduce((sum, o) => sum + Number(o.total), 0);
@@ -20,12 +20,15 @@ async function getData() {
   const categorySales: Record<string, number> = {};
 
   for (const item of orderItems.data ?? []) {
-    const prod = item.products as unknown as { name: string } | null;
+    const prod = item.products as unknown as { name: string; categories: { name: string } | null } | null;
     const qty = Number(item.quantity);
     if (prod) {
       const existing = topProducts.find(p => p.name === prod.name);
       if (existing) existing.qty += qty;
       else topProducts.push({ name: prod.name, qty });
+
+      const catName = prod.categories?.name ?? "Sem categoria";
+      categorySales[catName] = (categorySales[catName] ?? 0) + qty;
     }
   }
 

@@ -5,14 +5,21 @@ import type { Product } from '@/lib/products';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
 
-export default function ProductGrid({ products }: { products: Product[] }) {
+export default function ProductGrid({ products, title, subtitle, id }: {
+  products: Product[];
+  title: string;
+  subtitle?: string;
+  id?: string;
+}) {
   const { addToCart } = useCart();
+
+  if (products.length === 0) return null;
 
   return (
     <>
-      <div className="section-title" id="produtos">
-        <span className="sub">Best Sellers</span>
-        <h2>LANÇAMENTOS EXCLUSIVOS</h2>
+      <div className="section-title" id={id}>
+        {subtitle && <span className="sub">{subtitle}</span>}
+        <h2>{title}</h2>
       </div>
       <section className="container">
         <div className="product-grid">

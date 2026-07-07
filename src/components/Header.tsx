@@ -21,8 +21,8 @@ export default function Header({ onCartToggle, onSearchToggle }: HeaderProps) {
         <nav className="header-nav">
           <Link href="/">Início</Link>
           <Link href="/#produtos">Produtos</Link>
-          <a href="#">Sobre Nós</a>
-          <a href="#">Contato</a>
+          <Link href="/sobre">Sobre Nós</Link>
+          <Link href="/contato">Contato</Link>
         </nav>
         <div className="header-actions">
           <button onClick={onSearchToggle} title="Buscar">

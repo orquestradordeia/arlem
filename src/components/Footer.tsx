@@ -8,7 +8,7 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>INSTITUCIONAL</h4>
-          <a href="#">Sobre nós</a>
+          <a href="/sobre">Sobre nós</a>
           <a href="#">Política de privacidade</a>
           <a href="#">Troca e devolução</a>
           <a href="#">Termos de serviço</a>
@@ -18,7 +18,7 @@ export default function Footer() {
           <a href="#">Meus pedidos</a>
           <a href="#">Rastreamento</a>
           <a href="#">FAQ</a>
-          <a href="#">Fale conosco</a>
+          <a href="/contato">Fale conosco</a>
         </div>
         <div className="footer-col">
           <h4>REDES SOCIAIS</h4>

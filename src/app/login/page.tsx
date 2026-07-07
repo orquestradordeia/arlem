@@ -65,9 +65,9 @@ function LoginForm() {
         background: "var(--glass-bg)", border: "1px solid var(--glass-border)",
         borderRadius: 16, padding: 40, width: "100%", maxWidth: 400,
       }}>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--neon-cyan)", textAlign: "center", marginBottom: 8 }}>
-          STORE
-        </h1>
+        <div style={{ textAlign: "center", marginBottom: 8 }}>
+          <img src="/images/AEL.png" alt="AEL Store" style={{ maxWidth: 180, height: "auto" }} />
+        </div>
         <p style={{ textAlign: "center", color: "var(--text-secondary)", marginBottom: 32, fontSize: 14 }}>
           {isSignup ? "Criar nova conta" : "Acessar sua conta"}
         </p>

@@ -22,10 +22,11 @@ async function handleSave(formData: FormData) {
   const description = formData.get("description") as string;
   const price = parseFloat(formData.get("price") as string);
   const category_id = formData.get("category_id") ? parseInt(formData.get("category_id") as string) : null;
+  const featured = formData.get("featured") === "on";
 
   const { error } = await supabaseServer.from("products").insert({
     name, slug, description, price, category_id,
-    active: true, featured: false,
+    active: true, featured,
   });
 
   if (error) throw new Error(error.message);
@@ -49,6 +50,9 @@ export default async function NovoProduto() {
           <div className="admin-full"><label style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>Descrição</label><textarea name="description" className="admin-input" rows={3} /></div>
           <div><label style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>Preço (R$)</label><input name="price" type="number" step="0.01" className="admin-input" required /></div>
           <div><label style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>Categoria</label><select name="category_id" className="admin-input"><option value="">Sem categoria</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, cursor: "pointer" }}><input type="checkbox" name="featured" style={{ accentColor: "var(--neon-cyan)" }} /> Destaque</label>
+          </div>
         </div>
         <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
           <button type="submit" className="admin-btn">Salvar</button>

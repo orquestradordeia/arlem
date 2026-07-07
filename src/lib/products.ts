@@ -14,6 +14,7 @@ export type Product = {
   description: string;
   features: string[];
   reviews: { name: string; rating: number; text: string }[];
+  featured: boolean;
 };
 
 function calcBadge(price: number, oldPrice: number): string {
@@ -28,7 +29,7 @@ export async function getProducts(): Promise<Product[]> {
   const { data: products, error } = await supabase
     .from('products')
     .select(`
-      id, name, slug, brand, description, price, compare_price, features,
+      id, name, slug, brand, description, price, compare_price, features, featured,
       category:category_id(name),
       product_images(url),
       product_sizes(size:size_id(label)),
@@ -57,6 +58,7 @@ export async function getProducts(): Promise<Product[]> {
       price,
       oldPrice,
       badge: calcBadge(price, oldPrice),
+      featured: p.featured ?? false,
       img: images[0] ?? '',
       images,
       sizes,

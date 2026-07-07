@@ -8,7 +8,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-logo">STORE</div>
+        <div className="admin-logo">
+          <img src="/images/AEL.png" alt="AEL Store" style={{ maxWidth: 140, height: "auto" }} />
+        </div>
         <nav>
           <Link href="/admin/dashboard">Dashboard</Link>
           <Link href="/admin/produtos">Produtos</Link>
