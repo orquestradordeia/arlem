@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     await supabaseServer.from("order_items").insert(orderItems);
 
     const payment = mpOrder.transactions?.payments?.[0];
-    const pm = payment?.payment_method as
+    const pmData = (payment?.payment_method as Record<string, unknown>)?.data as
       | { qr_code?: string; qr_code_base64?: string }
       | undefined;
 
@@ -127,8 +127,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       order: { id: dbOrder.id, status: mpPaymentStatus === "approved" ? "paid" : "pending" },
       mpOrder: { id: mpOrder.id },
-      qrCode: pm?.qr_code_base64 ?? null,
-      qrCodeText: pm?.qr_code ?? null,
+      qrCode: pmData?.qr_code_base64 ?? null,
+      qrCodeText: pmData?.qr_code ?? null,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : JSON.stringify(error);
