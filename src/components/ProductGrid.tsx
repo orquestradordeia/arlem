@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Product } from '@/lib/products';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
@@ -45,8 +46,16 @@ export default function ProductGrid({ products, title, subtitle, id }: {
             <Link href={`/product/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }} key={p.id}>
               <div className="product-card">
                 <div className="badge">{p.badge}</div>
-                <div className="image-wrap">
-                  <img src={p.img} alt={p.name} loading="lazy" />
+                <div className="image-wrap" style={{ position: 'relative' }}>
+                  <Image
+                    src={p.img}
+                    alt={p.name}
+                    fill
+                    sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    style={{ objectFit: 'contain' }}
+                    quality={80}
+                    loading="lazy"
+                  />
                   <div className="glow"></div>
                 </div>
                 <div className="info">

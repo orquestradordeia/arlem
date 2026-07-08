@@ -22,7 +22,8 @@ function fillFeatured(featured: Product[], allProducts: Product[]): Product[] {
   return [...featured, ...pool.slice(0, needed)];
 }
 
-export const dynamic = 'force-dynamic';
+// ISR: cache the home page for 15 minutes, regenerate in background
+export const revalidate = 900;
 
 export default async function HomePage() {
   const products = await getProducts();

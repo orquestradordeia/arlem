@@ -1,6 +1,7 @@
 import { MercadoPagoConfig, Order } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { sendOrderEmail } from "@/lib/email";
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -181,6 +182,12 @@ export async function POST(req: NextRequest) {
         .from("orders")
         .update({ status: "paid" })
         .eq("id", dbOrder.id);
+      
+      try {
+        await sendOrderEmail(dbOrder.id);
+      } catch (emailErr) {
+        console.error("Failed to send order email:", emailErr);
+      }
     }
 
     return NextResponse.json({

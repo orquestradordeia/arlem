@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { Product } from '@/lib/products';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
@@ -45,7 +46,7 @@ export function SizeModal({ product, mode, onClose }: {
         <div style={{
           width: 64, height: 64, margin: '0 auto 16px', borderRadius: 12, overflow: 'hidden',
         }}>
-          <img src={product.img} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Image src={product.img} alt={product.name} width={64} height={64} quality={80} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <h3 style={{ fontSize: 15, marginBottom: 4, lineHeight: 1.3 }}>{product.name}</h3>
         <p style={{ fontSize: 14, color: 'var(--neon-cyan)', fontFamily: 'var(--font-display)', marginBottom: 20 }}>

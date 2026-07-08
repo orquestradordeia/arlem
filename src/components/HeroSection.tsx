@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const slides = [
-  '/images/slides/slide-01.png',
-  '/images/slides/slide-02.png',
-  '/images/slides/slide-04.png',
-  '/images/slides/slide-02.webp',
+  { src: '/images/slides/slide-01.png', priority: true },
+  { src: '/images/slides/slide-02.webp', priority: false },
+  { src: '/images/slides/slide-04.png', priority: false },
+  { src: '/images/slides/slide-02.webp', priority: false },
 ];
 
 export default function HeroSection() {
@@ -28,9 +29,18 @@ export default function HeroSection() {
     <section className="brand-hero" id="heroSection">
       <div className="hero-slideshow">
         <div className="hero-slideshow-inner" ref={innerRef}>
-          {slides.map((src, i) => (
-            <div className="hero-slide-bg" key={i}>
-              <img src={src} alt="" />
+          {slides.map((slide, i) => (
+            <div className="hero-slide-bg" key={i} style={{ position: 'relative' }}>
+              {/* Next/Image: auto-converts PNG→AVIF/WebP, handles srcset & preload */}
+              <Image
+                src={slide.src}
+                alt=""
+                fill
+                priority={slide.priority}
+                sizes="100vw"
+                style={{ objectFit: 'cover' }}
+                quality={85}
+              />
               <div className="backdrop"></div>
             </div>
           ))}
@@ -43,7 +53,16 @@ export default function HeroSection() {
           <div className="ring"></div>
           <div className="ring"></div>
           <div className="ring"></div>
-          <img src="/images/AEL.png" alt="Store" />
+          {/* Logo also optimized — from 764 KB PNG → ~60 KB AVIF */}
+          <Image
+            src="/images/AEL.png"
+            alt="Store"
+            width={220}
+            height={120}
+            priority
+            quality={90}
+            style={{ objectFit: 'contain' }}
+          />
         </div>
         <div className="btn-group">
           <Link href="/#produtos" className="btn-primary">VER COLEÇÃO</Link>

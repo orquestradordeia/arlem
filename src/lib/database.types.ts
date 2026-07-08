@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -399,6 +399,7 @@ export type Database = {
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          cpf: string | null
         }
         Insert: {
           created_at?: string
@@ -407,6 +408,7 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          cpf?: string | null
         }
         Update: {
           created_at?: string
@@ -415,6 +417,7 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          cpf?: string | null
         }
         Relationships: []
       }

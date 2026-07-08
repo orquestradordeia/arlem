@@ -77,11 +77,9 @@ function validateForm(data: FormData): FormErrors {
     errors.phone = 'Telefone é obrigatório (mínimo 10 dígitos)';
   }
 
-  if (data.cpf) {
-    const cpfDigits = data.cpf.replace(/\D/g, '');
-    if (cpfDigits.length !== 11) {
-      errors.cpf = 'CPF deve ter 11 dígitos';
-    }
+  const cpfDigits = data.cpf.replace(/\D/g, '');
+  if (!cpfDigits || cpfDigits.length !== 11) {
+    errors.cpf = 'CPF é obrigatório (11 dígitos)';
   }
 
   if (!data.street.trim()) errors.street = 'Rua é obrigatório';
@@ -102,7 +100,21 @@ function validateForm(data: FormData): FormErrors {
   return errors;
 }
 
-export default function CheckoutClient() {
+type CheckoutInitialData = {
+  email: string;
+  name: string;
+  phone: string;
+  cpf: string;
+  profileId: string;
+  address: {
+    street: string; number: string; complement: string;
+    neighborhood: string; city: string; state: string; zip_code: string;
+  } | null;
+} | null;
+
+const LAST_CHECKOUT_KEY = 'al_last_checkout';
+
+export default function CheckoutClient({ initialData = null }: { initialData?: CheckoutInitialData }) {
   const { cart, cartTotal, cartCount, clearCart } = useCart();
   const [step, setStep] = useState<Step>('form');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
@@ -123,10 +135,60 @@ export default function CheckoutClient() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [autoFilled, setAutoFilled] = useState(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [showAddressModal, setShowAddressModal] = useState(true);
+  const [profileId, setProfileId] = useState<string | null>(initialData?.profileId ?? null);
+  // Skip geolocation modal if we already have data (logged-in user or localStorage)
+  const [showAddressModal, setShowAddressModal] = useState(!initialData);
+  const [isNewProfile, setIsNewProfile] = useState(false);
 
   const { saved, save } = useUserData(form.email);
+
+  // On mount: pre-fill from logged-in user data (priority 1) or localStorage (priority 2)
+  useEffect(() => {
+    if (initialData) {
+      setForm(prev => ({
+        ...prev,
+        name: initialData.name || prev.name,
+        email: initialData.email || prev.email,
+        phone: initialData.phone || prev.phone,
+        cpf: initialData.cpf || prev.cpf,
+        ...(initialData.address ? {
+          street: initialData.address.street,
+          number: initialData.address.number,
+          complement: initialData.address.complement,
+          neighborhood: initialData.address.neighborhood,
+          city: initialData.address.city,
+          state: initialData.address.state,
+          zip_code: initialData.address.zip_code,
+        } : {}),
+      }));
+      setAutoFilled(true);
+      return;
+    }
+    // Guest: try localStorage
+    try {
+      const raw = localStorage.getItem(LAST_CHECKOUT_KEY);
+      if (raw) {
+        const cached = JSON.parse(raw) as Partial<FormData & { email: string }>;
+        setForm(prev => ({
+          ...prev,
+          name: cached.name || prev.name,
+          email: cached.email || prev.email,
+          phone: cached.phone || prev.phone,
+          cpf: cached.cpf || prev.cpf,
+          street: cached.street || prev.street,
+          number: cached.number || prev.number,
+          complement: cached.complement || prev.complement,
+          neighborhood: cached.neighborhood || prev.neighborhood,
+          city: cached.city || prev.city,
+          state: cached.state || prev.state,
+          zip_code: cached.zip_code || prev.zip_code,
+        }));
+        setAutoFilled(true);
+        setShowAddressModal(false); // already have address, skip geolocation
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!saved || autoFilled) return;
@@ -187,6 +249,7 @@ export default function CheckoutClient() {
       if (!res.ok) return;
       const data = await res.json();
       setProfileId(data.profile.id);
+      if (data.is_new) setIsNewProfile(true);
 
       if (!data.is_new) {
         setForm(prev => {
@@ -195,6 +258,7 @@ export default function CheckoutClient() {
           const p = data.profile;
           if (p.name && !prev.name) { next.name = p.name; changed = true; }
           if (p.phone && !prev.phone) { next.phone = p.phone; changed = true; }
+          if (p.cpf && !prev.cpf) { next.cpf = p.cpf; changed = true; }
           const addr = data.addresses?.[0];
           if (addr) {
             if (addr.street && !prev.street) { next.street = addr.street; changed = true; }
@@ -226,7 +290,7 @@ export default function CheckoutClient() {
 
   const handlePixSubmit = async () => {
     const validation = validateForm(form);
-    setTouched({ name: true, email: true, phone: true, street: true, number: true, neighborhood: true, city: true, state: true, zip_code: true });
+    setTouched({ name: true, email: true, phone: true, cpf: true, street: true, number: true, neighborhood: true, city: true, state: true, zip_code: true });
     setErrors(validation);
     if (Object.keys(validation).length > 0) return;
 
@@ -236,6 +300,7 @@ export default function CheckoutClient() {
     const device_id = await getDeviceSessionId();
 
     let pid = profileId;
+    let newlyCreated = isNewProfile;
     if (!pid) {
       try {
         const r = await fetch("/api/find-or-create-profile", {
@@ -244,7 +309,7 @@ export default function CheckoutClient() {
           body: JSON.stringify({ email: form.email, name: form.name, phone: form.phone }),
         });
         const d = await r.json();
-        if (r.ok) { pid = d.profile.id; }
+        if (r.ok) { pid = d.profile.id; newlyCreated = d.is_new === true; }
       } catch {}
     }
 
@@ -286,6 +351,24 @@ export default function CheckoutClient() {
           city: form.city, state: form.state, zip_code: form.zip_code,
         },
       });
+      // Persist for next guest/returning visit
+      try {
+        localStorage.setItem(LAST_CHECKOUT_KEY, JSON.stringify({
+          name: form.name, email: form.email, phone: form.phone, cpf: form.cpf,
+          street: form.street, number: form.number, complement: form.complement,
+          neighborhood: form.neighborhood, city: form.city,
+          state: form.state, zip_code: form.zip_code,
+        }));
+      } catch { /* ignore */ }
+      // Set CPF as default password for newly created guest accounts
+      if (newlyCreated && pid && form.cpf) {
+        const cpfDigits = form.cpf.replace(/\D/g, '');
+        fetch('/api/set-default-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: pid, password: cpfDigits }),
+        }).catch(() => {});
+      }
       setOrderId(data.order.id);
       setMpOrderId(data.mpOrder.id);
       setQrCode(data.qrCode ?? '');
@@ -301,7 +384,7 @@ export default function CheckoutClient() {
 
   const handleCardPayment = async (cardData: { token: string; payment_method_id: string; installments: number }) => {
     const validation = validateForm(form);
-    setTouched({ name: true, email: true, phone: true, street: true, number: true, neighborhood: true, city: true, state: true, zip_code: true });
+    setTouched({ name: true, email: true, phone: true, cpf: true, street: true, number: true, neighborhood: true, city: true, state: true, zip_code: true });
     setErrors(validation);
     if (Object.keys(validation).length > 0) {
       setError('Corrija os campos destacados antes de prosseguir');
@@ -314,6 +397,7 @@ export default function CheckoutClient() {
     const device_id = await getDeviceSessionId();
 
     let pid = profileId;
+    let newlyCreated = isNewProfile;
     if (!pid) {
       try {
         const r = await fetch("/api/find-or-create-profile", {
@@ -322,7 +406,7 @@ export default function CheckoutClient() {
           body: JSON.stringify({ email: form.email, name: form.name, phone: form.phone }),
         });
         const d = await r.json();
-        if (r.ok) { pid = d.profile.id; }
+        if (r.ok) { pid = d.profile.id; newlyCreated = d.is_new === true; }
       } catch {}
     }
 
@@ -369,6 +453,24 @@ export default function CheckoutClient() {
           city: form.city, state: form.state, zip_code: form.zip_code,
         },
       });
+      // Persist for next guest/returning visit
+      try {
+        localStorage.setItem(LAST_CHECKOUT_KEY, JSON.stringify({
+          name: form.name, email: form.email, phone: form.phone, cpf: form.cpf,
+          street: form.street, number: form.number, complement: form.complement,
+          neighborhood: form.neighborhood, city: form.city,
+          state: form.state, zip_code: form.zip_code,
+        }));
+      } catch { /* ignore */ }
+      // Set CPF as default password for newly created guest accounts
+      if (newlyCreated && pid && form.cpf) {
+        const cpfDigits = form.cpf.replace(/\D/g, '');
+        fetch('/api/set-default-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: pid, password: cpfDigits }),
+        }).catch(() => {});
+      }
       setOrderId(data.order.id);
       clearCart();
       setStep('success');
@@ -498,6 +600,14 @@ export default function CheckoutClient() {
       {step === 'form' && (
         <div className="checkout-grid">
           <div>
+            {!initialData && (
+              <div className="checkout-login-hint">
+                <span>Você já tem cadastro?</span>
+                <Link href={`/login?redirect=/checkout`} className="checkout-login-link">
+                  Entrar
+                </Link>
+              </div>
+            )}
             <h2 style={{ marginBottom: 24 }}>Informações de entrega</h2>
             <div style={{ display: 'grid', gap: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -506,7 +616,7 @@ export default function CheckoutClient() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <InputField name="phone" placeholder="Telefone (WhatsApp)" value={form.phone} onChange={handleChange} onBlur={handleBlur} error={errors.phone} touched={touched.phone} inputMode="numeric" />
-                <InputField name="cpf" placeholder="CPF" value={form.cpf} onChange={handleChange} onBlur={handleBlur} error={errors.cpf} touched={touched.cpf} inputMode="numeric" optional />
+                <InputField name="cpf" placeholder="CPF" value={form.cpf} onChange={handleChange} onBlur={handleBlur} error={errors.cpf} touched={touched.cpf} inputMode="numeric" />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16 }}>
                 <InputField name="street" placeholder="Rua" value={form.street} onChange={handleChange} onBlur={handleBlur} error={errors.street} touched={touched.street} />

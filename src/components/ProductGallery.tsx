@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface ProductGalleryProps {
   images: string[];
@@ -12,10 +13,19 @@ export default function ProductGallery({ images, badge }: ProductGalleryProps) {
 
   return (
     <div>
-      <div className="gallery-main">
+      <div className="gallery-main" style={{ position: 'relative' }}>
         <div className="badge">{badge}</div>
         <div className="glow"></div>
-        <img src={images[active]} alt="" />
+        {/* Main image: priority so it loads immediately as product LCP element */}
+        <Image
+          src={images[active]}
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 768px) 100vw, 50vw"
+          style={{ objectFit: 'contain' }}
+          quality={85}
+        />
       </div>
       <div className="gallery-thumbs">
         {images.map((img, i) => (
@@ -23,8 +33,17 @@ export default function ProductGallery({ images, badge }: ProductGalleryProps) {
             className={`thumb${i === active ? ' active' : ''}`}
             key={i}
             onClick={() => setActive(i)}
+            style={{ position: 'relative' }}
           >
-            <img src={img} alt="" />
+            <Image
+              src={img}
+              alt=""
+              fill
+              sizes="80px"
+              style={{ objectFit: 'cover' }}
+              quality={70}
+              loading="lazy"
+            />
           </div>
         ))}
       </div>

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Footer() {
   return (
     <footer className="footer">
@@ -15,7 +17,7 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>AJUDA</h4>
-          <a href="#">Meus pedidos</a>
+          <Link href="/app/pedidos">Meus pedidos</Link>
           <a href="#">Rastreamento</a>
           <a href="#">FAQ</a>
           <a href="/contato">Fale conosco</a>

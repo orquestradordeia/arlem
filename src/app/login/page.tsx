@@ -53,7 +53,12 @@ function LoginForm() {
     const res = await fetch("/api/user-role");
     const { role } = await res.json();
 
-    router.push(role === "admin" ? "/admin/dashboard" : "/app/pedidos");
+    const redirectParam = params.get("redirect");
+    if (redirectParam) {
+      router.push(redirectParam);
+    } else {
+      router.push(role === "admin" ? "/admin/dashboard" : "/app/pedidos");
+    }
   }
 
   return (

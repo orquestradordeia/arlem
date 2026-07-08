@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 
 interface CartDrawerProps {
@@ -25,7 +26,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
           ) : (
             cart.map(item => (
               <div className="cart-item" key={`${item.id}-${item.size ?? ''}`}>
-                <img src={item.img} alt={item.name} />
+                <Image src={item.img} alt={item.name} width={56} height={56} quality={75} style={{ objectFit: 'cover', borderRadius: 8 }} />
                 <div className="item-info">
                   <h4>{item.name}{item.size ? ` (${item.size})` : ''}</h4>
                   <div className="item-price">R$ {item.price.toFixed(2).replace('.', ',')} x {item.qty}</div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 
 interface HeaderProps {
@@ -27,7 +28,7 @@ export default function Header({ onCartToggle, onSearchToggle }: HeaderProps) {
     <header className="header">
       <div className="container">
           <Link href="/" className="header-logo">
-          <img src="/images/AEL.png" alt="Store" />
+          <Image src="/images/AEL.png" alt="Store" width={48} height={32} priority quality={90} style={{ objectFit: 'contain' }} />
           <span>SHOPS</span>
         </Link>
         <nav className="header-nav">

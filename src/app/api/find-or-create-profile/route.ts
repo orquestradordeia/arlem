@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       const { data: profile } = await supabaseServer
         .from("profiles")
-        .select("id, name, phone, role, created_at")
+        .select("id, name, phone, role, cpf, created_at")
         .eq("id", existing.id)
         .single();
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         .order("is_default", { ascending: false });
 
       return NextResponse.json({
-        profile: profile ?? { id: existing.id, name: null, phone: null, role: "customer", created_at: existing.created_at },
+        profile: profile ?? { id: existing.id, name: null, phone: null, role: "customer", cpf: null, created_at: existing.created_at },
         addresses: addresses ?? [],
         is_new: false,
       });

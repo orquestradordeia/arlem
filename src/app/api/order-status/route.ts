@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Order } from "mercadopago";
 import { supabaseServer } from "@/lib/supabase-server";
+import { sendOrderEmail } from "@/lib/email";
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -26,10 +27,31 @@ export async function GET(req: NextRequest) {
 
     if (mpOrder.id) {
       const mpOrderId = mpOrder.id.toString();
-      await supabaseServer
-        .from("orders")
-        .update({ status: dbStatus as "pending" | "paid" | "cancelled" })
-        .eq("mp_payment_id", mpOrderId);
+      if (dbStatus === "paid") {
+        const { data: order } = await supabaseServer
+          .from("orders")
+          .select("id, status")
+          .eq("mp_payment_id", mpOrderId)
+          .maybeSingle();
+
+        if (order && order.status !== "paid") {
+          await supabaseServer
+            .from("orders")
+            .update({ status: "paid" })
+            .eq("id", order.id);
+
+          try {
+            await sendOrderEmail(order.id);
+          } catch (emailErr) {
+            console.error("Failed to send order email:", emailErr);
+          }
+        }
+      } else {
+        await supabaseServer
+          .from("orders")
+          .update({ status: dbStatus as "pending" | "paid" | "cancelled" })
+          .eq("mp_payment_id", mpOrderId);
+      }
     }
 
     return NextResponse.json({ status: dbStatus });

@@ -7,12 +7,14 @@ import AppShell from '@/components/AppShell';
 const orbitron = Orbitron({
   subsets: ['latin'],
   variable: '--font-display',
+  display: 'swap',
 });
 
 const rajdhani = Rajdhani({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-body',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
