@@ -21,19 +21,19 @@ export default function ProductInfo({ product, onSizeGuideOpen }: ProductInfoPro
   const savings = product.oldPrice - product.price;
 
   const handleAdd = () => {
-    if (!selectedSize) {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       setShowSizeModal({ mode: 'add' });
       return;
     }
-    addToCart(product, selectedSize, qty);
+    addToCart(product, selectedSize || undefined, qty);
   };
 
   const handleBuy = () => {
-    if (!selectedSize) {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       setShowSizeModal({ mode: 'buy' });
       return;
     }
-    addToCart(product, selectedSize, qty);
+    addToCart(product, selectedSize || undefined, qty);
     router.push('/checkout');
   };
 
@@ -52,22 +52,26 @@ export default function ProductInfo({ product, onSizeGuideOpen }: ProductInfoPro
         <div className="price-save">Economize R$ {formatPrice(savings)} ({product.badge})</div>
         <div className="installment">ou 4x de R$ {formatPrice(product.price / 4)} sem juros</div>
       </div>
-      <div className="size-selector">
-        <label>TAMANHO <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>(BR)</span></label>
-        <div className="sizes">
-          {product.sizes.map(s => (
-            <button
-              key={s}
-              id={`size-btn-${s}`}
-              className={selectedSize === s ? 'active' : ''}
-              onClick={() => setSelectedSize(s)}
-            >
-              {s}
-            </button>
-          ))}
+      
+      {product.sizes && product.sizes.length > 0 && (
+        <div className="size-selector">
+          <label>TAMANHO <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>(BR)</span></label>
+          <div className="sizes">
+            {product.sizes.map(s => (
+              <button
+                key={s}
+                id={`size-btn-${s}`}
+                className={selectedSize === s ? 'active' : ''}
+                onClick={() => setSelectedSize(s)}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <a className="size-guide" onClick={onSizeGuideOpen}>📏 Tabela de Medidas</a>
         </div>
-        <a className="size-guide" onClick={onSizeGuideOpen}>📏 Tabela de Medidas</a>
-      </div>
+      )}
+
       <div className="qty-selector">
         <label>QUANTIDADE</label>
         <div className="qty-controls">

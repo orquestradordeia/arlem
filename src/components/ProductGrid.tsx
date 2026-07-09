@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import type { Product } from '@/lib/products';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
@@ -31,6 +32,8 @@ export default function ProductGrid({ products, title, subtitle, id }: {
   id?: string;
 }) {
   const [modalProduct, setModalProduct] = useState<{ product: Product; mode: 'add' | 'buy' } | null>(null);
+  const { addToCart } = useCart();
+  const router = useRouter();
 
   if (products.length === 0) return null;
 
@@ -66,10 +69,25 @@ export default function ProductGrid({ products, title, subtitle, id }: {
                   </div>
                   <div className="installment">ou 4x de R$ {formatPrice(p.price / 4)} sem juros</div>
                   <div className="btn-group-card">
-                    <button className="btn-add" onClick={e => { e.preventDefault(); setModalProduct({ product: p, mode: 'add' }); }}>
+                    <button className="btn-add" onClick={e => {
+                      e.preventDefault();
+                      if (p.sizes && p.sizes.length > 0) {
+                        setModalProduct({ product: p, mode: 'add' });
+                      } else {
+                        addToCart(p, undefined, 1);
+                      }
+                    }}>
                       <CartIcon /> ADICIONAR AO CARRINHO
                     </button>
-                    <button className="btn-buy-now" onClick={e => { e.preventDefault(); setModalProduct({ product: p, mode: 'buy' }); }}>
+                    <button className="btn-buy-now" onClick={e => {
+                      e.preventDefault();
+                      if (p.sizes && p.sizes.length > 0) {
+                        setModalProduct({ product: p, mode: 'buy' });
+                      } else {
+                        addToCart(p, undefined, 1);
+                        router.push('/checkout');
+                      }
+                    }}>
                       <DollarIcon /> COMPRAR AGORA
                     </button>
                   </div>

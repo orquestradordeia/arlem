@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
+import ImageUploader from "@/components/ImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,28 @@ async function handleSave(formData: FormData) {
   const price = parseFloat(formData.get("price") as string);
   const category_id = formData.get("category_id") ? parseInt(formData.get("category_id") as string) : null;
   const featured = formData.get("featured") === "on";
+  
+  const imagesJson = formData.get("images") as string;
+  const imagesUrls = imagesJson ? JSON.parse(imagesJson) as string[] : [];
 
-  const { error } = await supabaseServer.from("products").insert({
+  const { data: productData, error } = await supabaseServer.from("products").insert({
     name, slug, description, price, category_id,
     active: true, featured,
-  });
+  }).select().single();
 
   if (error) throw new Error(error.message);
+
+  if (productData && imagesUrls.length > 0) {
+    const imagesToInsert = imagesUrls.map((url, index) => ({
+      product_id: productData.id,
+      url: url,
+      sort_order: index,
+      alt: name
+    }));
+    const { error: imagesError } = await supabaseServer.from("product_images").insert(imagesToInsert);
+    if (imagesError) throw new Error(imagesError.message);
+  }
+
   redirect("/admin/produtos");
 }
 
@@ -50,6 +66,11 @@ export default async function NovoProduto() {
           <div className="admin-full"><label style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>Descrição</label><textarea name="description" className="admin-input" rows={3} /></div>
           <div><label style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>Preço (R$)</label><input name="price" type="number" step="0.01" className="admin-input" required /></div>
           <div><label style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>Categoria</label><select name="category_id" className="admin-input"><option value="">Sem categoria</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+          
+          <div className="admin-full">
+            <ImageUploader />
+          </div>
+
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, cursor: "pointer" }}><input type="checkbox" name="featured" style={{ accentColor: "var(--neon-cyan)" }} /> Destaque</label>
           </div>

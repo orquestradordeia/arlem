@@ -22,7 +22,7 @@ async function getDeviceSessionId(): Promise<string | null> {
         mpAny.getDeviceId((id: string) => resolve(id));
       });
     }
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -59,6 +59,30 @@ const FIELD_LABELS: Record<keyof FormData, string> = {
   zip_code: 'CEP',
 };
 
+function isValidCPF(cpf: string): boolean {
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(digits.charAt(i)) * (10 - i);
+  }
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(digits.charAt(9))) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(digits.charAt(i)) * (11 - i);
+  }
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(digits.charAt(10))) return false;
+
+  return true;
+}
+
 function validateForm(data: FormData): FormErrors {
   const errors: FormErrors = {};
 
@@ -77,9 +101,10 @@ function validateForm(data: FormData): FormErrors {
     errors.phone = 'Telefone é obrigatório (mínimo 10 dígitos)';
   }
 
-  const cpfDigits = data.cpf.replace(/\D/g, '');
-  if (!cpfDigits || cpfDigits.length !== 11) {
-    errors.cpf = 'CPF é obrigatório (11 dígitos)';
+  if (!data.cpf.trim()) {
+    errors.cpf = 'CPF é obrigatório';
+  } else if (!isValidCPF(data.cpf)) {
+    errors.cpf = 'Informe um CPF válido';
   }
 
   if (!data.street.trim()) errors.street = 'Rua é obrigatório';
@@ -187,7 +212,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
         setShowAddressModal(false); // already have address, skip geolocation
       }
     } catch { /* ignore */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -310,7 +335,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
         });
         const d = await r.json();
         if (r.ok) { pid = d.profile.id; newlyCreated = d.is_new === true; }
-      } catch {}
+      } catch { }
     }
 
     try {
@@ -367,7 +392,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ profileId: pid, password: cpfDigits }),
-        }).catch(() => {});
+        }).catch(() => { });
       }
       setOrderId(data.order.id);
       setMpOrderId(data.mpOrder.id);
@@ -407,7 +432,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
         });
         const d = await r.json();
         if (r.ok) { pid = d.profile.id; newlyCreated = d.is_new === true; }
-      } catch {}
+      } catch { }
     }
 
     try {
@@ -469,7 +494,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ profileId: pid, password: cpfDigits }),
-        }).catch(() => {});
+        }).catch(() => { });
       }
       setOrderId(data.order.id);
       clearCart();
@@ -806,7 +831,7 @@ function SuccessScreen({ form, orderId }: { form: FormData; orderId: number | nu
   return (
     <div style={{ textAlign: 'center', padding: '20px 0', maxWidth: 520, margin: '0 auto' }}>
       <div style={{ fontSize: 64, marginBottom: 16 }}>
-        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
       </div>
       <h2 style={{ fontSize: 24, marginBottom: 8 }}>Pagamento aprovado!</h2>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: 15 }}>
