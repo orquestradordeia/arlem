@@ -95,12 +95,14 @@ export default function AddressModal({ onUse, onClose }: AddressModalProps) {
         </p>
         <div className="address-modal-fields">
           <input
+            id="addr-modal-street"
             placeholder="Rua"
             value={address.street}
             onChange={handleChange('street')}
             className="address-modal-input"
           />
           <input
+            id="addr-modal-number"
             ref={numberRef}
             placeholder="Número"
             value={address.number}
@@ -109,18 +111,21 @@ export default function AddressModal({ onUse, onClose }: AddressModalProps) {
             inputMode="numeric"
           />
           <input
+            id="addr-modal-complement"
             placeholder="Complemento (opcional)"
             value={address.complement}
             onChange={handleChange('complement')}
             className="address-modal-input"
           />
           <input
+            id="addr-modal-neighborhood"
             placeholder="Bairro"
             value={address.neighborhood}
             onChange={handleChange('neighborhood')}
             className="address-modal-input"
           />
           <input
+            id="addr-modal-city"
             placeholder="Cidade"
             value={address.city}
             onChange={handleChange('city')}
@@ -128,6 +133,7 @@ export default function AddressModal({ onUse, onClose }: AddressModalProps) {
           />
           <div className="address-modal-row">
             <input
+              id="addr-modal-state"
               placeholder="UF"
               value={address.state}
               onChange={handleChange('state')}
@@ -136,6 +142,7 @@ export default function AddressModal({ onUse, onClose }: AddressModalProps) {
               style={{ flex: 1 }}
             />
             <input
+              id="addr-modal-zip"
               placeholder="CEP"
               value={address.zip_code}
               onChange={handleChange('zip_code')}
@@ -147,12 +154,14 @@ export default function AddressModal({ onUse, onClose }: AddressModalProps) {
         </div>
         <div className="address-modal-actions">
           <button
+            id="addr-modal-cancel-btn"
             className="address-modal-btn address-modal-btn-secondary"
             onClick={onClose}
           >
             Cancelar
           </button>
           <button
+            id="addr-modal-use-btn"
             className="address-modal-btn address-modal-btn-primary"
             onClick={() => onUse(address)}
           >

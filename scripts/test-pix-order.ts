@@ -27,7 +27,7 @@ async function test() {
         ],
       },
       items: [{ title: "Teste", quantity: 1, unit_price: "1.00" }],
-      payer: { email: "comprador1@testuser.com" },
+      payer: { email: "test_user_3525648998@testuser.com" },
     },
   });
 
@@ -54,4 +54,7 @@ async function test() {
   console.log("pm.data?.qr_code:", pm && "data" in pm ? (pm as any).data?.qr_code : "NO data FIELD");
 }
 
-test().catch(console.error);
+test().catch(err => {
+  console.log("=== ERROR ===");
+  console.log(JSON.stringify(err, null, 2));
+});

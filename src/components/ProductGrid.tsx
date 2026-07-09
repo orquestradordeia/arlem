@@ -43,7 +43,7 @@ export default function ProductGrid({ products, title, subtitle, id }: {
       <section className="container">
         <div className="product-grid">
           {products.map(p => (
-            <Link href={`/product/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }} key={p.id}>
+            <Link href={`/product/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }} key={p.id} id={`product-card-${p.id}`}>
               <div className="product-card">
                 <div className="badge">{p.badge}</div>
                 <div className="image-wrap" style={{ position: 'relative' }}>

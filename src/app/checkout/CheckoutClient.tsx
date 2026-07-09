@@ -553,13 +553,13 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
             boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
           }}>
             {qrCode && (
-              <img src={`data:image/png;base64,${qrCode}`} alt="Pix QR Code"
+              <img id="pix-qr-code" src={`data:image/png;base64,${qrCode}`} alt="Pix QR Code"
                 style={{ width: 280, height: 280, marginBottom: 24 }} />
             )}
             {qrCodeText && (
               <div style={{ width: '100%' }}>
                 <p style={{ fontSize: 13, color: '#111', marginBottom: 8, fontWeight: 600 }}>Ou copie o código Pix:</p>
-                <div style={{
+                <div id="pix-copy-button" style={{
                   background: '#eee', borderRadius: 8, padding: '12px 16px',
                   fontSize: 12, wordBreak: 'break-all', color: '#000', cursor: 'pointer',
                 }} onClick={() => { navigator.clipboard.writeText(qrCodeText); alert('Código Pix copiado!'); }}>
@@ -681,7 +681,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
             </div>
 
             {error && (
-              <div style={{
+              <div id="checkout-error" style={{
                 background: 'rgba(255,68,68,0.12)', border: '1px solid #ff4444',
                 borderRadius: 8, padding: '12px 16px', marginBottom: 12,
                 fontSize: 13, color: '#ff6b6b',
@@ -691,7 +691,7 @@ export default function CheckoutClient({ initialData = null }: { initialData?: C
             )}
 
             {paymentMethod === 'pix' && (
-              <button className="checkout-btn" onClick={handlePixSubmit} disabled={loading}
+              <button id="finalize-checkout-btn" className="checkout-btn" onClick={handlePixSubmit} disabled={loading}
                 style={{ opacity: loading ? 0.6 : 1 }}>
                 {loading ? 'PROCESSANDO...' : 'FINALIZAR PEDIDO'}
               </button>
@@ -773,6 +773,7 @@ function InputField({
   return (
     <div>
       <input
+        id={name}
         name={name}
         placeholder={placeholder}
         type={type || 'text'}

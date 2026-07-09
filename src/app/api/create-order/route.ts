@@ -119,6 +119,52 @@ export async function POST(req: NextRequest) {
       orderBody.device_id = device_id;
     }
 
+    // Update profile and auth user details if profile_id is provided
+    if (profile_id) {
+      try {
+        // 1. Update profiles table
+        await supabaseServer
+          .from("profiles")
+          .update({
+            name: customer.name,
+            phone: customer.phone,
+          })
+          .eq("id", profile_id);
+
+        // 2. Update auth.users metadata and phone
+        let formattedPhone = customer.phone ? String(customer.phone).replace(/\D/g, "") : "";
+        if (formattedPhone && !formattedPhone.startsWith("+")) {
+          formattedPhone = formattedPhone.length <= 11 ? `+55${formattedPhone}` : `+${formattedPhone}`;
+        }
+
+        const updateData: any = {
+          user_metadata: {
+            name: customer.name,
+            phone: customer.phone,
+            full_name: customer.name,
+            role: "customer",
+          }
+        };
+
+        if (formattedPhone && /^\+[1-9]\d{1,14}$/.test(formattedPhone)) {
+          updateData.phone = formattedPhone;
+        }
+
+        const { error: authUpdateError } = await supabaseServer.auth.admin.updateUserById(
+          profile_id,
+          updateData
+        );
+
+        if (authUpdateError && updateData.phone) {
+          // If updating native phone column failed (e.g. invalid format or duplicate), fallback to updating only metadata
+          delete updateData.phone;
+          await supabaseServer.auth.admin.updateUserById(profile_id, updateData);
+        }
+      } catch (profileUpdateErr) {
+        console.error("Error updating profile and auth user:", profileUpdateErr);
+      }
+    }
+
     const mpOrder = await orderApi.create({ body: orderBody });
 
     const { data: dbAddress, error: addrError } = await supabaseServer
@@ -202,15 +248,22 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error) {
       message = error.message;
     } else if (typeof error === "object" && error !== null) {
-      const obj = error as Record<string, unknown>;
-      const causes = obj.cause;
-      if (Array.isArray(causes) && causes.length > 0) {
-        const parts = causes.map((c: Record<string, unknown>) =>
-          [c.description, c.error_description].filter(Boolean).join(". ")
-        ).filter(Boolean);
-        if (parts.length > 0) message = parts.join(". ");
-      } else if (typeof obj.message === "string") {
-        message = obj.message;
+      const obj = error as any;
+      if (Array.isArray(obj.errors) && obj.errors.length > 0) {
+        message = obj.errors.map((e: any) => {
+          const detail = Array.isArray(e.details) ? e.details.join(", ") : "";
+          return [e.message, detail].filter(Boolean).join(": ");
+        }).join(". ");
+      } else {
+        const causes = obj.cause;
+        if (Array.isArray(causes) && causes.length > 0) {
+          const parts = causes.map((c: Record<string, unknown>) =>
+            [c.description, c.error_description].filter(Boolean).join(". ")
+          ).filter(Boolean);
+          if (parts.length > 0) message = parts.join(". ");
+        } else if (typeof obj.message === "string") {
+          message = obj.message;
+        }
       }
     }
 

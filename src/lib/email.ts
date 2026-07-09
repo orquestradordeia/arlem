@@ -2,12 +2,12 @@ import nodemailer from 'nodemailer';
 import { supabaseServer } from './supabase-server';
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === 'true',
   auth: {
-    user: 'b139eb001@smtp-brevo.com',
-    pass: 'CRAKW8mJt61ZFNrM',
+    user: process.env.SMTP_USER || 'b139eb001@smtp-brevo.com',
+    pass: process.env.SMTP_PASS || 'xsmtpsib-4a819540ae89a16526edf2db716b78d76d01d46fa3af50fd82af7231f2352330-HBfPw87LV9yvCFKi',
   },
 });
 
@@ -44,6 +44,8 @@ export async function sendOrderEmail(orderId: number) {
       console.error('Error fetching profile for email:', profileErr);
       return;
     }
+
+    const customerName = profile.name || 'Cliente';
 
     // 3. Fetch user email from Auth
     const { data: authUser, error: authErr } = await supabaseServer.auth.admin.getUserById(order.profile_id);
@@ -141,7 +143,7 @@ export async function sendOrderEmail(orderId: number) {
                   <td style="padding: 40px 30px;">
                     <h1 style="margin: 0 0 16px 0; color: #f0f0f0; text-align: center; font-size: 24px; font-weight: 700; letter-spacing: 1px;">PEDIDO CONFIRMADO!</h1>
                     <p style="margin: 0 0 30px 0; text-align: center; font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6;">
-                      Olá, <strong>${profile.name}</strong>. Obrigado por comprar na ALL Shops! Seu pagamento foi aprovado e seu pedido <strong>#${orderId}</strong> já está sendo preparado para o envio.
+                      Olá, <strong>${customerName}</strong>. Obrigado por comprar na ALL Shops! Seu pagamento foi aprovado e seu pedido <strong>#${orderId}</strong> já está sendo preparado para o envio.
                     </p>
                     
                     <!-- Items Grid -->
@@ -195,7 +197,7 @@ export async function sendOrderEmail(orderId: number) {
     const textContent = `
       Pedido Confirmado - ALL Shops
       
-      Olá ${profile.name}, seu pedido #${orderId} foi confirmado e está sendo preparado!
+      Olá ${customerName}, seu pedido #${orderId} foi confirmado e está sendo preparado!
       
       Itens do pedido:
       ${items.map((i: any) => `- ${i.product?.name} (Qtd: ${i.quantity}) - R$ ${Number(i.unit_price).toFixed(2).replace('.', ',')}`).join('\n')}
@@ -210,7 +212,7 @@ export async function sendOrderEmail(orderId: number) {
 
     // 5. Send email
     await transporter.sendMail({
-      from: '"ALL Shops" <b139eb001@smtp-brevo.com>',
+      from: process.env.SMTP_FROM || '"Shops ALL" <naoresponda@shops-all.com>',
       to: email,
       subject: `Pedido Confirmado #${orderId} - ALL Shops`,
       text: textContent,

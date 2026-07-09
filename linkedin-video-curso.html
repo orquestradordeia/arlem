@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Creativity Applied to Prompt Design</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #171717;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* HEADER */
+        .header {
+            position: absolute;
+            top: 24px;
+            left: 40px;
+            color: #777;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            z-index: 10;
+        }
+
+        /* PALCO */
+        .stage {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            transition: opacity 0.3s ease;
+        }
+        
+        .stage.fade-out {
+            opacity: 0;
+        }
+
+        /* CHAT */
+        .chat {
+            height: 100%;
+            max-width: 900px;
+            width: 100%;
+            margin: auto;
+            padding: 70px 30px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        .chat::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .chat::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 24px;
+            animation: fade .3s ease;
+            align-items: flex-start;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            margin-top: 2px;
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .user .avatar {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+        }
+
+        .gpt .avatar {
+            background: linear-gradient(135deg, #10a37f, #0d8567);
+            color: white;
+        }
+
+        .content {
+            flex: 1;
+            max-width: 800px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .user .content {
+            background: #2b2d31;
+            border: 1px solid #3f4248;
+        }
+
+        .gpt .content {
+            background: #202123;
+            border: 1px solid #2d2d30;
+        }
+
+        .name {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .text {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-size: 15px;
+            color: #e3e3e3;
+        }
+
+        /* SLIDES */
+        .slides {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: #171717;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .slides img {
+            max-width: 90%;
+            max-height: 82%;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.3s ease;
+        }
+
+        /* NAVIGATION CARETS (DIVS to avoid CSS clashes) */
+        .nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(45, 45, 45, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 32px;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 20;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .nav:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            transform: translateY(-50%) scale(1.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav:active {
+            transform: translateY(-50%) scale(0.96);
+        }
+
+        .left {
+            left: 40px;
+        }
+
+        .right {
+            right: 40px;
+        }
+
+        .counter {
+            position: absolute;
+            bottom: 25px;
+            color: #aaa;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        /* FOOTER */
+        .controls {
+            height: 90px;
+            flex-shrink: 0;
+            background: #1e1e1f;
+            border-top: 1px solid #2d2d30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px;
+            z-index: 10;
+            position: relative;
+        }
+
+        button {
+            background: rgba(45, 45, 45, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #ddd;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            outline: none;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.highlight {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-color: #3b82f6;
+            color: #fff;
+            box-shadow: 0 0 14px rgba(37, 99, 235, 0.45);
+            font-weight: 600;
+        }
+
+        button.highlight:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            border-color: #60a5fa;
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.6);
+        }
+
+        /* ANEXOS */
+        .attachments {
+            display: flex;
+            gap: 16px;
+            margin: 25px 0 25px 53px;
+            flex-wrap: wrap;
+        }
+
+        .file {
+            width: 95px;
+            height: 95px;
+            background: rgba(36, 36, 36, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(60px);
+            animation: uploadPulse 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            transition: all 0.25s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .file:hover {
+            transform: translateY(-4px) scale(1.04);
+            border-color: rgba(255, 255, 255, 0.18);
+            background: rgba(50, 50, 50, 0.7);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .file svg {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 8px;
+        }
+
+        .file span {
+            font-size: 10px;
+            color: #bbb;
+            text-align: center;
+            max-width: 85px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        @keyframes uploadPulse {
+            0% {
+                opacity: 0;
+                transform: translateY(60px) scale(0.9);
+            }
+            60% {
+                opacity: 0.9;
+                transform: translateY(-4px) scale(1.03);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes fade {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        Creativity Applied to Prompt Design
+    </div>
+
+    <div class="stage">
+        <div id="chat" class="chat"></div>
+
+        <div id="slides" class="slides">
+            <div class="nav left" onclick="prevScene()">‹</div>
+            <img id="slideImage" src="slide1.png">
+            <div class="nav right" onclick="nextScene()">›</div>
+            <div id="counter" class="counter">
+                Slide 1 / 7
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <!-- Buttons are dynamically rendered by JavaScript based on narrative structure -->
+    </div>
+
+    <script>
+        const chat = document.getElementById("chat");
+        
+        let currentTimelineIndex = 0;
+        let lastStoryIndex = 0;
+        let currentView = "story";
+        const presentationMode = true;
+
+        // Unified narrative timeline containing slides and interative animations in exact requested order
+        const timeline = [
+            { type: "story", slide: "slide1.png", name: "Missão", slideIndex: 1 },
+            { type: "interaction", id: "cotacao", name: "Comum" },
+            { type: "story", slide: "slide2.png", name: "E-mails", slideIndex: 2 },
+            { type: "story", slide: "slide3.png", name: "Resumo", slideIndex: 3 },
+            { type: "interaction", id: "curto", name: "Curto" },
+            { type: "story", slide: "slide4.png", name: "Detalhado", slideIndex: 4 },
+            { type: "interaction", id: "longo", name: "Longo" },
+            { type: "story", slide: "slide5.png", name: "Pense", slideIndex: 5 },
+            { type: "interaction", id: "criativo", name: "Ideal" },
+            { type: "story", slide: "slide6.png", name: "Resumo", slideIndex: 6 },
+            { type: "story", slide: "slide7.png", name: "Recapitulando", slideIndex: 7 }
+        ];
+
+        let activeIntervals = [];
+        let activeResolves = [];
+        let currentSequenceTimer = null;
+
+        function renderButtons() {
+            const container = document.querySelector(".controls");
+            container.innerHTML = timeline.map((scene, idx) => {
+                return `<button id="btn-${idx}" onclick="loadScene(${idx})">${scene.name}</button>`;
+            }).join("");
+        }
+
+        function clearAllActiveProcesses() {
+            if (currentSequenceTimer) {
+                clearTimeout(currentSequenceTimer);
+                currentSequenceTimer = null;
+            }
+            activeIntervals.forEach(timer => clearInterval(timer));
+            activeIntervals = [];
+            activeResolves.forEach(resolveFn => resolveFn());
+            activeResolves = [];
+        }
+
+        function fadeTransition(action) {
+            const stage = document.querySelector(".stage");
+            stage.classList.add("fade-out");
+            setTimeout(() => {
+                action();
+                stage.classList.remove("fade-out");
+            }, 300);
+        }
+
+        function loadScene(index) {
+            if (index < 0 || index >= timeline.length) return;
+            
+            clearAllActiveProcesses();
+            
+            if (timeline[currentTimelineIndex].type === "story") {
+                lastStoryIndex = currentTimelineIndex;
+            }
+            
+            currentTimelineIndex = index;
+            const newScene = timeline[index];
+            
+            if (newScene.type === "story") {
+                currentView = "story";
+                fadeTransition(() => {
+                    chat.style.display = "none";
+                    document.getElementById("slides").style.display = "flex";
+                    document.getElementById("slideImage").src = newScene.slide;
+                    document.getElementById("counter").innerHTML = `Slide ${newScene.slideIndex} / 7`;
+                    updateButtonHighlights();
+                });
+            } else if (newScene.type === "interaction") {
+                currentView = "interaction";
+                fadeTransition(() => {
+                    document.getElementById("slides").style.display = "none";
+                    chat.style.display = "block";
+                    runScene(newScene.id);
+                });
+            }
+        }
+
+        function nextScene() {
+            if (currentTimelineIndex < timeline.length - 1) {
+                loadScene(currentTimelineIndex + 1);
+            }
+        }
+
+        function prevScene() {
+            if (currentTimelineIndex > 0) {
+                loadScene(currentTimelineIndex - 1);
+            }
+        }
+
+        function returnToStory() {
+            let targetIndex = lastStoryIndex;
+            if (targetIndex === null || timeline[targetIndex].type !== "story") {
+                targetIndex = 0;
+                for (let i = currentTimelineIndex; i >= 0; i--) {
+                    if (timeline[i].type === "story") {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+            }
+            loadScene(targetIndex);
+        }
+
+        function updateButtonHighlights() {
+            document.querySelectorAll(".controls button").forEach(btn => btn.classList.remove("highlight"));
+            const activeBtn = document.getElementById(`btn-${currentTimelineIndex}`);
+            if (activeBtn) {
+                activeBtn.classList.add("highlight");
+            }
+        }
+
+        const scenes = {
+            cotacao: [
+                [
+                    "user",
+                    "Transforme este e-mail em uma solicitação de cotação que eu possa enviar aos fornecedores."
+                ],
+                [
+                    "gpt",
+                    "Assunto: Solicitação de Cotação\n\nOlá,\n\nGostaríamos de solicitar uma proposta comercial para:\n\n- 10 notebooks\n- 10 monitores\n- 10 kits teclado/mouse\n\nFavor informar:\n- valores\n- prazo de entrega\n- garantia\n- validade da proposta."
+                ]
+            ],
+
+            curto: [
+                [
+                    "user",
+                    "Crie um e-mail para meu gerente informando que o fornecedor Alfa venceu a concorrência."
+                ],
+                [
+                    "gpt",
+                    "Olá Carlos,\n\nApós análise das propostas recebidas, informo que o fornecedor Alfa foi selecionado.\n\nValor total: R$ 18.450.\n\nPermaneço à disposição."
+                ]
+            ],
+
+            longo: [
+                [
+                    "user",
+                    "Você é especialista em compras corporativas.\n\nAnalise preço, prazo, garantia e condições comerciais.\n\nCrie um e-mail executivo justificando a recomendação."
+                ],
+                [
+                    "gpt",
+                    "Olá Carlos,\n\nApós análise detalhada das propostas, recomendo a Alfa Tech.\n\nA decisão considera custo, prazo de entrega, garantia e condições comerciais."
+                ]
+            ],
+
+            criativo: [
+                [
+                    "files",
+                    ""
+                ],
+                [
+                    "user",
+                    "Com base nos documentos anexados, responda ao meu gerente."
+                ],
+                [
+                    "gpt",
+                    "Olá Carlos,\n\nAnalisei todas as propostas recebidas.\n\nEmbora a Beta Solutions tenha apresentado menor valor, o prazo de entrega representa risco para o cronograma.\n\nA Alfa Tech apresenta o melhor equilíbrio entre custo, prazo e condições comerciais.\n\nAtenciosamente,\n\nLucas Ferreira"
+                ]
+            ]
+        };
+
+        function getIconForType(type) {
+            if (type === "Email") {
+                return `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                `;
+            } else if (type === "PDF") {
+                return `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                `;
+            } else if (type === "Planilha") {
+                return `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="3" x2="9" y2="21"/>
+                        <line x1="15" y1="3" x2="15" y2="21"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="3" y1="15" x2="21" y2="15"/>
+                    </svg>
+                `;
+            }
+            return "";
+        }
+
+        function showFiles() {
+            const div = document.createElement("div");
+            div.className = "attachments";
+
+            const fileList = [
+                { type: "Email", name: "E-mail 1" },
+                { type: "Email", name: "E-mail 2" },
+                { type: "PDF", name: "Preços Alfa.pdf" },
+                { type: "Planilha", name: "Comparativo.xlsx" },
+                { type: "PDF", name: "Preços Beta.pdf" },
+                { type: "Email", name: "E-mail 3" }
+            ];
+
+            div.innerHTML = fileList.map((file, idx) => `
+                <div class="file" style="animation-delay: ${idx * 0.15}s">
+                    ${getIconForType(file.type)}
+                    <span>${file.name}</span>
+                </div>
+            `).join("");
+
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function typeMessage(type, text) {
+            return new Promise(resolve => {
+                const msg = document.createElement("div");
+                msg.className = "message " + type;
+                const avatarChar = type === "user" ? "U" : "AI";
+                const nameLabel = type === "user" ? "Você" : "GPT";
+
+                msg.innerHTML = `
+                    <div class="avatar">${avatarChar}</div>
+                    <div class="content">
+                        <div class="name">${nameLabel}</div>
+                        <div class="text"></div>
+                    </div>
+                `;
+
+                chat.appendChild(msg);
+                const target = msg.querySelector(".text");
+                let i = 0;
+
+                const safeResolve = () => {
+                    clearInterval(timer);
+                    const rIdx = activeResolves.indexOf(safeResolve);
+                    if (rIdx > -1) activeResolves.splice(rIdx, 1);
+                    const iIdx = activeIntervals.indexOf(timer);
+                    if (iIdx > -1) activeIntervals.splice(iIdx, 1);
+                    resolve();
+                };
+
+                activeResolves.push(safeResolve);
+
+                const timer = setInterval(() => {
+                    target.textContent = text.substring(0, i);
+                    i++;
+
+                    if (i > text.length) {
+                        safeResolve();
+                    }
+
+                    chat.scrollTop = chat.scrollHeight;
+                }, 15);
+
+                activeIntervals.push(timer);
+            });
+        }
+
+        async function runScene(scene) {
+            chat.innerHTML = "";
+            updateButtonHighlights();
+
+            const steps = scenes[scene];
+            for (const item of steps) {
+                await new Promise(resolve => {
+                    const t = setTimeout(resolve, 700);
+                    currentSequenceTimer = t;
+                });
+
+                if (item[0] === "files") {
+                    showFiles();
+                    await new Promise(resolve => {
+                        const t = setTimeout(resolve, 1800);
+                        currentSequenceTimer = t;
+                    });
+                } else {
+                    await typeMessage(item[0], item[1]);
+                }
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener("keydown", e => {
+            const key = e.key.toLowerCase();
+
+            if (e.key === "ArrowRight") {
+                nextScene();
+            } else if (e.key === "ArrowLeft") {
+                prevScene();
+            } else if (key === "0" || key === "h") {
+                loadScene(0);
+            } else if (key === "1") {
+                loadScene(1); // Comum (interactive 1)
+            } else if (key === "2") {
+                loadScene(4); // Curto (interactive 2)
+            } else if (key === "3") {
+                loadScene(6); // Longo (interactive 3)
+            } else if (key === "4") {
+                loadScene(8); // Ideal (interactive 4)
+            } else if (e.key === "Escape") {
+                returnToStory();
+            }
+        });
+
+        // Initialize presentation scene on window load
+        window.onload = () => {
+            renderButtons();
+            loadScene(0);
+        };
+    </script>
+</body>
+</html>

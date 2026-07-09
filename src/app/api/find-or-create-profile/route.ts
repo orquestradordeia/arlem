@@ -13,6 +13,48 @@ export async function POST(req: NextRequest) {
     const existing = users?.users.find((u) => u.email === email);
 
     if (existing) {
+      if (name || phone) {
+        try {
+          await supabaseServer
+            .from("profiles")
+            .update({
+              ...(name ? { name } : {}),
+              ...(phone ? { phone } : {}),
+            })
+            .eq("id", existing.id);
+
+          let formattedPhone = phone ? String(phone).replace(/\D/g, "") : "";
+          if (formattedPhone && !formattedPhone.startsWith("+")) {
+            formattedPhone = formattedPhone.length <= 11 ? `+55${formattedPhone}` : `+${formattedPhone}`;
+          }
+
+          const updateData: any = {
+            user_metadata: {
+              ...existing.user_metadata,
+              ...(name ? { name, full_name: name } : {}),
+              ...(phone ? { phone } : {}),
+              role: "customer",
+            }
+          };
+
+          if (formattedPhone && /^\+[1-9]\d{1,14}$/.test(formattedPhone)) {
+            updateData.phone = formattedPhone;
+          }
+
+          const { error: authUpdateError } = await supabaseServer.auth.admin.updateUserById(
+            existing.id,
+            updateData
+          );
+
+          if (authUpdateError && updateData.phone) {
+            delete updateData.phone;
+            await supabaseServer.auth.admin.updateUserById(existing.id, updateData);
+          }
+        } catch (updateErr) {
+          console.error("Error updating existing profile on find-or-create:", updateErr);
+        }
+      }
+
       const { data: profile } = await supabaseServer
         .from("profiles")
         .select("id, name, phone, role, cpf, created_at")
@@ -36,7 +78,12 @@ export async function POST(req: NextRequest) {
       email,
       password: crypto.randomUUID(),
       email_confirm: true,
-      user_metadata: { name: name ?? null, phone: phone ?? null },
+      user_metadata: { 
+        name: name ?? null, 
+        phone: phone ?? null,
+        full_name: name ?? null,
+        role: "customer"
+      },
     });
 
     if (createErr) throw createErr;
